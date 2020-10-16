@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 from pycls.core.config import cfg
 from torch.nn import Module
+from pycls.models.endstop_helper import *
 
 
 # ----------------------- Shortcuts for common torch.nn layers ----------------------- #
@@ -163,7 +164,9 @@ def adjust_block_compatibility(ws, bs, gs):
 
 def init_weights(m):
     """Performs ResNet-style weight initialization."""
-    if isinstance(m, nn.Conv2d):
+    if isinstance(m, EndstoppingDilation):
+        pass
+    elif isinstance(m, nn.Conv2d):
         # Note that there is no bias due to BN
         fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
         m.weight.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
