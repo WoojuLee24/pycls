@@ -50,12 +50,17 @@ def setup_logging():
         # Construct logging configuration
         logging_config = {"level": logging.INFO, "format": _FORMAT}
         # Log either to stdout or to a file
-        if cfg.LOG_DEST == "stdout":
-            logging_config["stream"] = sys.stdout
-        else:
-            logging_config["filename"] = os.path.join(cfg.OUT_DIR, _LOG_FILE)
+        # if cfg.LOG_DEST == "stdout":
+        #     logging_config["stream"] = sys.stdout
+        # else:
+        #     logging_config["filename"] = os.path.join(cfg.OUT_DIR, _LOG_FILE)
+
+        # filename and stream_handler
+        fh = logging.FileHandler(os.path.join(cfg.OUT_DIR, _LOG_FILE))
+        sh = logging.StreamHandler(sys.stdout)
+
         # Configure logging
-        logging.basicConfig(**logging_config)
+        logging.basicConfig(handlers=[fh, sh], **logging_config)
     else:
         _suppress_print()
 
