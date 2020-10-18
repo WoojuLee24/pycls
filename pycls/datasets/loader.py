@@ -18,14 +18,34 @@ from torch.utils.data.sampler import RandomSampler
 
 
 # Supported datasets
-_DATASETS = {"cifar10": Cifar10, "imagenet": ImageNet}
+_DATASETS = {"cifar10": Cifar10, "imagenet": ImageNet,
+             "imagenet-c/blur/defocus_blur/1": ImageNet}
 
 # Default data directory (/path/pycls/pycls/datasets/data)
 # _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _DATA_DIR = "/ws/data"
 
 # Relative data paths to default data directory
-_PATHS = {"cifar10": "cifar10", "imagenet": "imagenet"}
+_PATHS = {"cifar10": "cifar10", "imagenet": "imagenet" }
+
+
+def construct_c_loader(data_path, split, batch_size, shuffle, drop_last):
+    """Constructs the data loader for the given dataset."""
+    # Construct the dataset
+    dataset = ImageNet(data_path, split)
+    # Create a sampler for multi-process training
+    sampler = DistributedSampler(dataset) if cfg.NUM_GPUS > 1 else None
+    # Create a loader
+    loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=(False if sampler else shuffle),
+        sampler=sampler,
+        num_workers=cfg.DATA_LOADER.NUM_WORKERS,
+        pin_memory=cfg.DATA_LOADER.PIN_MEMORY,
+        drop_last=drop_last,
+    )
+    return loader
 
 
 def _construct_loader(dataset_name, split, batch_size, shuffle, drop_last):

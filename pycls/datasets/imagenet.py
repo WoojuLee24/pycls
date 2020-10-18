@@ -36,7 +36,7 @@ class ImageNet(torch.utils.data.Dataset):
 
     def __init__(self, data_path, split):
         assert os.path.exists(data_path), "Data path '{}' not found".format(data_path)
-        splits = ["train", "val"]
+        splits = ["train", "val", ""]
         assert split in splits, "Split '{}' not supported for ImageNet".format(split)
         logger.info("Constructing ImageNet {}...".format(split))
         self._data_path, self._split = data_path, split
