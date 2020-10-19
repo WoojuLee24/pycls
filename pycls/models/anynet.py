@@ -314,12 +314,13 @@ class EndstopDivideBottleneckTransform(Module):
         self.a = conv2d(w_in, w_b, 1)
         self.a_bn = norm2d(w_b)
         self.a_af = activation()
-        # self.b = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
-        self.b = EndstoppingDivide(w_b, w_b, 3, stride=stride, groups=groups)
+        self.b = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
+        # self.b = EndstoppingDivide(w_b, w_b, 3, stride=stride, groups=groups)
         self.b_bn = norm2d(w_b)
         self.b_af = activation()
         self.se = SE(w_b, w_se) if w_se else None
-        self.c = conv2d(w_b, w_out, 1)
+        # self.c = conv2d(w_b, w_out, 1)
+        self.c = EndstoppingDivide(w_b, w_out, 3, stride=1, groups=groups)
         self.c_bn = norm2d(w_out)
         self.c_bn.final_bn = True
 
