@@ -19,14 +19,15 @@ from torch.utils.data.sampler import RandomSampler
 
 # Supported datasets
 _DATASETS = {"cifar10": Cifar10, "imagenet": ImageNet,
-             "imagenet-c/blur/defocus_blur/1": ImageNet}
+             "imagenet-style": ImageNet, "imagenet-edge": ImageNet,}
 
 # Default data directory (/path/pycls/pycls/datasets/data)
 # _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _DATA_DIR = "/ws/data"
 
 # Relative data paths to default data directory
-_PATHS = {"cifar10": "cifar10", "imagenet": "imagenet" }
+_PATHS = {"cifar10": "cifar10", "imagenet": "imagenet",
+          "imagenet-style": "imagenet-style", "imagenet-edge": "imagenet-edge",}
 
 
 def construct_c_loader(data_path, split, batch_size, shuffle, drop_last):
