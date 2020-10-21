@@ -48,6 +48,7 @@ def get_block_fun(block_type):
         "endstop_dilation_res_bottleneck_block": EndstopDilationResBottleneckBlock,
         "endstop_divide_res_bottleneck_block": EndstopDivideResBottleneckBlock,
         "endstop_dilation_prelu_res_bottleneck_block": EndstopDilationPReLUResBottleneckBlock,
+        "endstop_dilation_with_conv_res_bottleneck_block": EndstopDilationWithConvResBottleneckBlock,
     }
     err_str = "Block type '{}' not supported"
     assert block_type in block_funs.keys(), err_str.format(block_type)
@@ -151,6 +152,59 @@ class ResBasicBlock(Module):
             cx = norm2d_cx(cx, w_out)
             cx["h"], cx["w"] = h, w
         cx = BasicTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
+class EndstopDilationBasicTransform(Module):
+    """Basic transformation: [3x3 conv, BN, Relu] x2."""
+
+    def __init__(self, w_in, w_out, stride, _params):
+        super(EndstopDilationBasicTransform, self).__init__()
+        self.a = conv2d(w_in, w_out, 3, stride=stride)
+        self.a_bn = norm2d(w_out)
+        self.a_af = activation()
+        self.b = EndstoppingDilation(w_out, w_out, 3, stride=stride, groups=w_out)
+        self.b_bn = norm2d(w_out)
+        self.b_bn.final_bn = True
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, _params):
+        cx = conv2d_cx(cx, w_in, w_out, 3, stride=stride)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_out, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class EndstopDilationResBasicBlock(Module):
+    """Residual basic block: x + f(x), f = basic transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(EndstopDilationResBasicBlock, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.bn = norm2d(w_out)
+        self.f = EndstoppingDilationBasicTransform(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(x)) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = EndstoppingDilationBasicTransform.complexity(cx, w_in, w_out, stride, params)
         return cx
 
 
@@ -371,6 +425,134 @@ class EndstopDilationPReLUResBottleneckBlock(Module):
         return cx
 
 
+class EndstopDilationBottleneckTransform(Module):
+    """Bottleneck transformation: 1x1, 3x3 [+SE], 1x1."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(EndstopDilationBottleneckTransform, self).__init__()
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        self.a = conv2d(w_in, w_b, 1)
+        self.a_bn = norm2d(w_b)
+        self.a_af = activation()
+        # self.b = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
+        self.b = EndstoppingDilation(w_b, w_b, 3, stride=stride, groups=groups)
+        self.b_bn = norm2d(w_b)
+        self.b_af = activation()
+        self.se = SE(w_b, w_se) if w_se else None
+        self.c = conv2d(w_b, w_out, 1)
+        self.c_bn = norm2d(w_out)
+        self.c_bn.final_bn = True
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        cx = conv2d_cx(cx, w_in, w_b, 1)
+        cx = norm2d_cx(cx, w_b)
+        cx = conv2d_cx(cx, w_b, w_b, 3, stride=stride, groups=groups)
+        cx = norm2d_cx(cx, w_b)
+        cx = SE.complexity(cx, w_b, w_se) if w_se else cx
+        cx = conv2d_cx(cx, w_b, w_out, 1)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class EndstopDilationWithConvResBottleneckBlock(Module):
+    """Residual bottleneck block: x + f(x), f = bottleneck transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(EndstopDilationWithConvResBottleneckBlock, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.bn = norm2d(w_out)
+        self.f = EndstopDilationWithConvBottleneckTransform(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(x)) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = EndstopDilationWithConvBottleneckTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
+class EndstopDilationWithConvBottleneckTransform(Module):
+    """Bottleneck transformation: 1x1, 3x3 [+SE], 1x1."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(EndstopDilationWithConvBottleneckTransform, self).__init__()
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        self.a = conv2d(w_in, w_b, 1)
+        self.a_bn = norm2d(w_b)
+        self.a_af = activation()
+
+        self.b = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
+        self.b_bn = norm2d(w_b)
+
+        self.be = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
+        self.be_bn = norm2d(w_b)
+        self.be_af = activation()
+
+        self.e = EndstoppingDilation(w_b, w_b, 3, stride=1, groups=w_b)
+        self.e_bn = norm2d(w_b)
+
+        self.se = SE(w_b, w_se) if w_se else None
+        self.c = conv2d(w_b, w_out, 1)
+        self.c_bn = norm2d(w_out)
+        self.c_bn.final_bn = True
+
+    def forward(self, x):
+        x = self.a(x)
+        x = self.a_bn(x)
+        x = self.a_af(x)
+
+        xe = self.be(x)
+        xe = self.be_bn(xe)
+        xe = self.be_af(xe)
+        xe = self.e(xe)
+        xe = self.e_bn(xe)
+
+        x = self.b(x)
+        x = self.b_bn(x)
+        x = self.be_af(x+xe)
+
+        x = self.c(x)
+        x = self.c_bn(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        cx = conv2d_cx(cx, w_in, w_b, 1)
+        cx = norm2d_cx(cx, w_b)
+        cx = conv2d_cx(cx, w_b, w_b, 3, stride=stride, groups=groups)
+        cx = norm2d_cx(cx, w_b)
+        cx = SE.complexity(cx, w_b, w_se) if w_se else cx
+        cx = conv2d_cx(cx, w_b, w_out, 1)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
 
 class EndstopDivideBottleneckTransform(Module):
     """Bottleneck transformation: 1x1, 3x3 [+SE], 1x1."""
@@ -411,7 +593,6 @@ class EndstopDivideBottleneckTransform(Module):
         cx = conv2d_cx(cx, w_b, w_out, 1)
         cx = norm2d_cx(cx, w_out)
         return cx
-
 
 
 class EndstopDivideResBottleneckBlock(Module):
