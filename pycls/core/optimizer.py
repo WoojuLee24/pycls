@@ -76,6 +76,10 @@ def lr_fun_lin(cur_epoch):
     lr = 1.0 - cur_epoch / cfg.OPTIM.MAX_EPOCH
     return (1.0 - cfg.OPTIM.MIN_LR) * lr + cfg.OPTIM.MIN_LR
 
+def lr_fun_fix(cur_epoch):
+    """Fixed schedule (cfg.OPTIM.LR_POLICY = 'fix')."""
+    lr = 1
+    return lr
 
 def get_lr_fun():
     """Retrieves the specified lr policy function"""
