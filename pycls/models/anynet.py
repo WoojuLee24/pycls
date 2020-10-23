@@ -23,6 +23,7 @@ from pycls.models.blocks import (
     pool2d,
     pool2d_cx,
 )
+import torch
 from torch.nn import Module
 from pycls.models.endstop_helper import *
 
@@ -33,6 +34,7 @@ def get_stem_fun(stem_type):
         "res_stem_cifar": ResStemCifar,
         "res_stem_in": ResStem,
         "simple_stem_in": SimpleStem,
+        "res_stem_endstop_dilation": ResStemEndstopDilation,
     }
     err_str = "Stem type '{}' not supported"
     assert stem_type in stem_funs.keys(), err_str.format(stem_type)
@@ -665,6 +667,38 @@ class ResStem(Module):
         cx = pool2d_cx(cx, w_out, 3, stride=2)
         return cx
 
+class ResStemEndstopDilation(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemEndstopDilation, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.pool = pool2d(w_out, 3, stride=2)
+        self.e = EndstoppingDilation(w_out, w_out, 3, stride=1, groups=1)
+        self.e_bn = norm2d(w_out)
+
+    def forward(self, x):
+        # for layer in self.children():
+        #     x = layer(x)
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.pool(x)
+        xe = self.e(x)
+        xe = self.e_bn(xe)
+        xe = self.af(xe)
+        x = torch.cat((x, xe), dim=1)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
 
 class SimpleStem(Module):
     """Simple stem for ImageNet: 3x3, BN, AF."""
@@ -735,7 +769,10 @@ class AnyNet(Module):
         stem_fun = get_stem_fun(p["stem_type"])
         block_fun = get_block_fun(p["block_type"])
         self.stem = stem_fun(3, p["stem_w"])
-        prev_w = p["stem_w"]
+        if cfg.ANYNET.STEM_TYPE == "res_stem_endstop_dilation":
+            prev_w = p["stem_w"] * 2
+        else:
+            prev_w = p["stem_w"]
         keys = ["depths", "widths", "strides", "bot_muls", "group_ws"]
         for i, (d, w, s, b, g) in enumerate(zip(*[p[k] for k in keys])):
             params = {"bot_mul": b, "group_w": g, "se_r": p["se_r"]}
