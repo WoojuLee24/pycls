@@ -374,7 +374,7 @@ class AnyMultiNet(Module):
                                  cfg.MODEL.NUM_CLASSES)
 
     def forward(self, x):
-        x = [x, x]
+        x = [x, x.clone().detach()]
         x = self.s1(x)
         if cfg.ANYMULTINET.V1:
             x[1] = self.s1_v1(x[1])
