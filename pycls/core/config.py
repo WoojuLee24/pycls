@@ -92,6 +92,28 @@ _C.ANYNET.SE_ON = False
 _C.ANYNET.SE_R = 0.25
 
 
+# ---------------------------------- AnyMultiNet options ---------------------------------- #
+_C.ANYMULTINET = CfgNode()
+
+# Stem type
+_C.ANYMULTINET.STEM_TYPE = "simple_stem_in"
+
+_C.ANYMULTINET.WIDTH_PER_GROUP = 64
+
+_C.ANYMULTINET.STRIDES = [[1, 1], [2, 2], [2, 2], [2, 2]]
+
+_C.ANYMULTINET.DEPTHS = [3, 4, 6, 3]
+
+# Block type
+_C.ANYMULTINET.BLOCK_TYPE = "res_bottleneck_block"
+
+_C.ANYMULTINET.BETA_INV = 8
+
+_C.ANYMULTINET.FUSION_RATIO = 2
+
+# Endstop
+_C.ANYMULTINET.V1 = False
+
 # ---------------------------------- RegNet options ---------------------------------- #
 _C.REGNET = CfgNode()
 
