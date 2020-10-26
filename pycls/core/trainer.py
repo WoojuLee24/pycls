@@ -184,8 +184,8 @@ def train_model():
     train_meter = meters.TrainMeter(len(train_loader))
     test_meter = meters.TestMeter(len(test_loader))
     # Compute model and loader timings
-    # if start_epoch == 0 and cfg.PREC_TIME.NUM_ITER > 0:
-    #     benchmark.compute_time_full(model, loss_fun, train_loader, test_loader)
+    if start_epoch == 0 and cfg.PREC_TIME.NUM_ITER > 0:
+        benchmark.compute_time_full(model, loss_fun, train_loader, test_loader)
     # Perform the training loop
     logger.info("Start epoch: {}".format(start_epoch + 1))
     for cur_epoch in range(start_epoch, cfg.OPTIM.MAX_EPOCH):
