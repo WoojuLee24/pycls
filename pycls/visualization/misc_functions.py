@@ -167,7 +167,7 @@ def preprocess_image(pil_im, resize_im=False):
     # Add one more channel to the beginning. Tensor shape = 1,3,224,224
     im_as_ten.unsqueeze_(0)
     # Convert to Pytorch variable
-    im_as_var = Variable(im_as_ten, requires_grad=True)
+    im_as_var = torch.tensor(im_as_ten, requires_grad=True).cuda()
     return im_as_var
 
 
@@ -181,7 +181,7 @@ def recreate_image(im_as_var):
     """
     reverse_mean = [-0.485, -0.456, -0.406]
     reverse_std = [1/0.229, 1/0.224, 1/0.225]
-    recreated_im = copy.copy(im_as_var.data.numpy()[0])
+    recreated_im = copy.copy(im_as_var.data.cpu().numpy()[0])
     for c in range(3):
         recreated_im[c] /= reverse_std[c]
         recreated_im[c] -= reverse_mean[c]
@@ -242,15 +242,15 @@ def get_example_params(example_index):
 
 def get_example_path(target_class, label_path):
 
-    with open(label_path, 'r') as f
+    with open(label_path, 'r') as f:
         data = json.load(label_path)
     class_folder = data[target_class][0]
-    class_path = os.path.join("/ws/data/val", class_folder)
+    class_path = os.path.join("/ws/data/imagenet/val", class_folder)
     class_name = data[target_class][1]
     jpg_list = os.listdir(class_path)
 
 
-def get_example(target_class, label_path):
+def get_example(target_class, label_path, target_layer):
     """
         Gets used variables for almost all visualizations, like the image, model etc.
 
@@ -265,18 +265,19 @@ def get_example(target_class, label_path):
         pretrained_model(Pytorch model): Model to use for the operations
     """
     # Pick one of the examples
-    with open(label_path, 'r') as f
-        data = json.load(label_path)
+    with open(label_path, 'r') as f:
+        data = json.loads(f.read())
     class_folder = data[target_class][0]
-    class_path = os.path.join("/ws/data/val", class_folder)
+    class_path = os.path.join("/ws/data/imagenet/val", class_folder)
     class_name = data[target_class][1]
-    jpg_list = os.listdir(class_path)
-    for jpg in jpg_list:
-        jpg_path = os.path.join(class_path, jpg)
 
-    file_name_to_export = img_path[img_path.rfind('/')+1:img_path.rfind('.')]
+    jpg_list = sorted(os.listdir(class_path))
+    jpg = jpg_list[0]
+    jpg_path = os.path.join(class_path, jpg)
+    file_name_to_export = "/ws/external/grad_cam/imagenet/"+class_name+"_"+ target_layer+ "_" + jpg
+
     # Read image
-    original_image = Image.open(img_path).convert('RGB')
+    original_image = Image.open(jpg_path).convert('RGB')
     # Process image
     prep_img = preprocess_image(original_image)
     return (original_image,

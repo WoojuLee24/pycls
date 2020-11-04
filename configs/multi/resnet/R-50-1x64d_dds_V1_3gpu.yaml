@@ -7,7 +7,7 @@ ANYMULTINET:
   WIDTH_PER_GROUP: 64
   STRIDES: [[1, 1], [2, 2], [2, 2], [2, 2]]
   DEPTHS: [3, 4, 6, 3]
-  BETA_INV: 4
+  BETA_INV: 16
   FUSION_RATIO: 2
   V1: True
 OPTIM:
