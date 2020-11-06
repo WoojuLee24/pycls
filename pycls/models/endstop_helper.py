@@ -20,6 +20,7 @@ class EndstoppingDivide(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
+        self.replication_pad = nn.ReplicationPad2d(1)
         self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
 
     def get_param(self, in_channels, out_channels, kernel_size, groups):
@@ -60,7 +61,9 @@ class EndstoppingDivide(nn.Conv2d):
 
     def forward(self, x):
         weight = self.get_weight_3x3(self.param)
-        x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)
+        x = self.replication_pad(x)
+        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
+        # x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)
         return x
 
 

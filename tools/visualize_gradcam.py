@@ -47,7 +47,6 @@ class GradCam():
         # input image [1, 3, 224, 224]
         # cont_output [1, 256, 13, 13]
 
-
         model_output = self.model(input_image)
         if target_class is None:
             target_class = np.argmax(model_output.data.numpy())
@@ -78,9 +77,9 @@ class GradCam():
 
 if __name__ == '__main__':
     # target layer and label
-    target_class = "100"  # Snake
+    target_class = "30"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
     label_path = "/ws/data/imagenet/imagenet_class_index.json"
-    target_layer = "s1.b2.f.b"
+    target_layer = "stem.conv"  # "stem.conv" "s4.b3.f.b"
 
     # load the model
     config.load_cfg_fom_args("Test a trained classification model.")
@@ -89,12 +88,15 @@ if __name__ == '__main__':
     pretrained_model = setup_model()
     cp.load_checkpoint(cfg.TEST.WEIGHTS, pretrained_model)
 
-    (original_image, prep_img, target_class, file_name_to_export) =\
+    (original_image, prep_img, class_name, jpg) =\
         get_example(target_class, label_path, target_layer)
+
+    output_path = "/ws/external/visualization_results/grad_cam/" + class_name + "_" + target_layer + "_" + jpg
+
     # Grad cam
     grad_cam = GradCam(pretrained_model, target_layer=target_layer)
     # Generate cam mask
     cam = grad_cam.generate_cam(prep_img, target_class)
     # Save mask
-    save_class_activation_images(original_image, cam, file_name_to_export)
+    save_class_activation_images(original_image, cam, output_path)
     print('Grad cam completed')

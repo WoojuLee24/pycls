@@ -10,6 +10,8 @@ import json
 import random
 from PIL import Image
 import matplotlib.cm as mpl_color_map
+import matplotlib.pyplot as plt
+
 
 import torch
 from torch.autograd import Variable
@@ -274,7 +276,6 @@ def get_example(target_class, label_path, target_layer):
     jpg_list = sorted(os.listdir(class_path))
     jpg = jpg_list[0]
     jpg_path = os.path.join(class_path, jpg)
-    file_name_to_export = "/ws/external/grad_cam/imagenet/"+class_name+"_"+ target_layer+ "_" + jpg
 
     # Read image
     original_image = Image.open(jpg_path).convert('RGB')
@@ -282,5 +283,6 @@ def get_example(target_class, label_path, target_layer):
     prep_img = preprocess_image(original_image)
     return (original_image,
             prep_img,
-            target_class,
-            file_name_to_export)
+            class_name,
+            jpg,
+            )

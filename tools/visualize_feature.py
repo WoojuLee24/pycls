@@ -200,6 +200,8 @@ class CNNLayerVisualization():
 if __name__ == '__main__':
     cnn_layer = "s1.b2.f.b"
     # cnn_layer = "layer2.2.conv2"
+
+    
     filter_pos = 6
     # Fully connected layer is not needed
     # pretrained_model = models.vgg16(pretrained=True).features

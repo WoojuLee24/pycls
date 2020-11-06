@@ -36,6 +36,7 @@ def get_stem_fun(stem_type):
         "simple_stem_in": SimpleStem,
         "res_stem_endstop_dilation": ResStemEndstopDilation,
         "endstop_dilation_stem": EndstopDilationStem,
+        "res_stem_endstop_divide_separation": ResStemEndstopDivideSeparation,
     }
     err_str = "Stem type '{}' not supported"
     assert stem_type in stem_funs.keys(), err_str.format(stem_type)
@@ -817,6 +818,37 @@ class ResStemEndstopDilation(Module):
         return cx
 
 
+class ResStemEndstopDivideSeparation(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemEndstopDivideSeparation, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.pool = pool2d(w_out, 3, stride=2)
+        self.e = EndstoppingDivide(w_out, w_out, 3, stride=1, groups=w_out)
+        self.e_bn = norm2d(w_out)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        xe = self.e(x)
+        xe = self.af(xe)
+        x = torch.cat((x, xe), dim=1)
+        x = self.pool(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
 class EndstopDilationStem(Module):
     """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
 
@@ -908,7 +940,7 @@ class AnyNet(Module):
         stem_fun = get_stem_fun(p["stem_type"])
         block_fun = get_block_fun(p["block_type"])
         self.stem = stem_fun(3, p["stem_w"])
-        if cfg.ANYNET.STEM_TYPE == "res_stem_endstop_dilation":
+        if (cfg.ANYNET.STEM_TYPE == "res_stem_endstop_dilation") or (cfg.ANYNET.STEM_TYPE == "res_stem_endstop_divide_separation"):
             prev_w = p["stem_w"] * 2
         else:
             prev_w = p["stem_w"]
