@@ -33,6 +33,7 @@ def get_stem_fun(stem_type):
     stem_funs = {
         "res_stem_cifar": ResStemCifar,
         "res_stem_in": ResStem,
+        "res_stem_compare": ResStemCompare,
         "simple_stem_in": SimpleStem,
         "res_stem_endstop_dilation": ResStemEndstopDilation,
         "endstop_dilation_stem": EndstopDilationStem,
@@ -787,6 +788,39 @@ class ResStem(Module):
         cx = pool2d_cx(cx, w_out, 3, stride=2)
         return cx
 
+
+class ResStemCompare(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCompare, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.pool = pool2d(w_out, 3, stride=2)
+        self.compare = conv2d(w_out, w_out, 3, stride=1, groups=1)
+        self.compare_bn = norm2d(w_out)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        xe = self.compare(x)
+        xe = self.compare_bn(xe)
+        xe = self.af(xe)
+        x = torch.cat((x, xe), dim=1)
+        x = self.pool(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
 class ResStemEndstopDilation(Module):
     """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
 
@@ -940,7 +974,8 @@ class AnyNet(Module):
         stem_fun = get_stem_fun(p["stem_type"])
         block_fun = get_block_fun(p["block_type"])
         self.stem = stem_fun(3, p["stem_w"])
-        if (cfg.ANYNET.STEM_TYPE == "res_stem_endstop_dilation") or (cfg.ANYNET.STEM_TYPE == "res_stem_endstop_divide_separation"):
+        if (cfg.ANYNET.STEM_TYPE == "res_stem_endstop_dilation") or (cfg.ANYNET.STEM_TYPE == "res_stem_endstop_divide_separation")\
+                or (cfg.ANYNET.STEM_TYPE == "res_stem_compare"):
             prev_w = p["stem_w"] * 2
         else:
             prev_w = p["stem_w"]
