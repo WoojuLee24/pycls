@@ -798,7 +798,7 @@ class ResStemCompare(Module):
         self.bn = norm2d(w_out)
         self.af = activation()
         self.pool = pool2d(w_out, 3, stride=2)
-        self.compare = conv2d(w_out, w_out, 3, stride=1, groups=1)
+        self.compare = conv2d(w_out, w_out, 3, stride=1, groups=w_out)
         self.compare_bn = norm2d(w_out)
 
     def forward(self, x):
