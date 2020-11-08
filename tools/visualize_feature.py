@@ -130,16 +130,13 @@ class CNNLayerVisualization():
         self.initial_learning_rate = 100
         self.weight_decay = 1e-6
         self.upscaling_factor = 1.2
-        self.upscaling_steps = 15
+        self.upscaling_steps = 10
         self.iteration_steps = 50
         self.blur = True
 
         # Create the folder to export images if not exists
-        if not os.path.exists('../generated/'):
-            os.makedirs('../generated/')
-        self.dir_path = "../generated/{}/".format(str(self.model_name))
-        if not os.path.exists(self.dir_path):
-            os.mkdir(self.dir_path)
+        if not os.path.exists('/ws/external/visualization_results/feature'):
+            os.makedirs('/ws/external/visualization_results/feature')
 
     def hook_layer(self):
         def hook_function(module, grad_in, grad_out):
@@ -190,18 +187,15 @@ class CNNLayerVisualization():
             self.created_image = self.created_image.filter(ImageFilter.BoxBlur(radius=1))
 
             # Save image
-            if i % 5 == 0:
-                im_path = '../generated/' + str(self.selected_layer) + \
+            if i % 10 == 0:
+                im_path = '/ws/external/visualization_results/feature/' + str(self.selected_layer) + \
                           '_f' + str(self.selected_filter) + '_iter' + str(i) + '.jpg'
                 save_image(self.created_image, im_path)
 
 
 
 if __name__ == '__main__':
-    cnn_layer = "s1.b2.f.b"
-    # cnn_layer = "layer2.2.conv2"
-
-    
+    cnn_layer = "s1.b2.f.b" # "s4.b3.f.b"  # "stem.conv"     # "s1.b2.f.b"
     filter_pos = 6
     # Fully connected layer is not needed
     # pretrained_model = models.vgg16(pretrained=True).features
