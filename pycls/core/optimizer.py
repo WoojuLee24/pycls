@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from pycls.core.config import cfg
+from pycls.core.smsgd import SMSGD
 
 
 def construct_optimizer(model):
@@ -45,6 +46,47 @@ def construct_optimizer(model):
     else:
         optim_params = model.parameters()
     return torch.optim.SGD(
+        optim_params,
+        lr=cfg.OPTIM.BASE_LR,
+        momentum=cfg.OPTIM.MOMENTUM,
+        weight_decay=cfg.OPTIM.WEIGHT_DECAY,
+        dampening=cfg.OPTIM.DAMPENING,
+        nesterov=cfg.OPTIM.NESTEROV,
+    )
+
+
+def construct_optimizer2(model):
+    """Constructs the optimizer.
+
+    Note that the momentum update in PyTorch differs from the one in Caffe2.
+    In particular,
+
+        Caffe2:
+            V := mu * V + lr * g
+            p := p - V
+
+        PyTorch:
+            V := mu * V + g
+            p := p - lr * V
+
+    where V is the velocity, mu is the momentum factor, lr is the learning rate,
+    g is the gradient and p are the parameters.
+
+    Since V is defined independently of the learning rate in PyTorch,
+    when the learning rate is changed there is no need to perform the
+    momentum correction by scaling V (unlike in the Caffe2 case).
+    """
+    if cfg.BN.USE_CUSTOM_WEIGHT_DECAY:
+        # Apply different weight decay to Batchnorm and non-batchnorm parameters.
+        p_bn = [p for n, p in model.named_parameters() if "bn" in n]
+        p_non_bn = [p for n, p in model.named_parameters() if "bn" not in n]
+        optim_params = [
+            {"params": p_bn, "weight_decay": cfg.BN.CUSTOM_WEIGHT_DECAY},
+            {"params": p_non_bn, "weight_decay": cfg.OPTIM.WEIGHT_DECAY},
+        ]
+    else:
+        optim_params = model.parameters()
+    return SMSGD(
         optim_params,
         lr=cfg.OPTIM.BASE_LR,
         momentum=cfg.OPTIM.MOMENTUM,

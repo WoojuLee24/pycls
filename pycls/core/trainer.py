@@ -227,7 +227,8 @@ def train_model2():
     # Construct the model, loss_fun, and optimizer
     model = setup_model()
     loss_fun = builders.build_loss_fun().cuda()
-    optimizer = optim.construct_optimizer(model)
+    optimizer = optim.construct_optimizer2(model)
+    # optimizer = optim.construct_optimizer(model)
     # Load checkpoint or initial weights
     start_epoch = 0
     if cfg.TRAIN.AUTO_RESUME and cp.has_checkpoint():
