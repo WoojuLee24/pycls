@@ -38,6 +38,7 @@ def get_stem_fun(stem_type):
         "res_stem_endstop_dilation": ResStemEndstopDilation,
         "endstop_dilation_stem": EndstopDilationStem,
         "res_stem_endstop_divide_separation": ResStemEndstopDivideSeparation,
+        "res_stem_endstop_divide_separation_entire": ResStemEndstopDivideSeparationEntire,
     }
     err_str = "Stem type '{}' not supported"
     assert stem_type in stem_funs.keys(), err_str.format(stem_type)
@@ -871,6 +872,35 @@ class ResStemEndstopDivideSeparation(Module):
         xe = self.e(x)
         xe = self.af(xe)
         x = torch.cat((x, xe), dim=1)
+        x = self.pool(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+class ResStemEndstopDivideSeparationEntire(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemEndstopDivideSeparationEntire, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.pool = pool2d(w_out, 3, stride=2)
+        self.e = EndstoppingDivide(w_out, w_out, 3, stride=1, groups=w_out)
+        self.e_bn = norm2d(w_out)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.e(x)
+        x = self.af(x)
         x = self.pool(x)
 
         return x
