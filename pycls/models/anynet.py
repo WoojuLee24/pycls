@@ -37,6 +37,7 @@ def get_stem_fun(stem_type):
         "simple_stem_in": SimpleStem,
         "res_stem_endstop_dilation": ResStemEndstopDilation,
         "endstop_dilation_stem": EndstopDilationStem,
+        "res_stem_fix_sm": ResStemFixSM,
         "res_stem_endstop_divide_separation": ResStemEndstopDivideSeparation,
         "res_stem_endstop_divide_separation_entire": ResStemEndstopDivideSeparationEntire,
     }
@@ -51,6 +52,7 @@ def get_block_fun(block_type):
         "vanilla_block": VanillaBlock,
         "res_basic_block": ResBasicBlock,
         "res_bottleneck_block": ResBottleneckBlock,
+        "res_bottleneck_block_end_proj": ResBottleneckBlockEndProj,
         "basic_res_bottleneck_block": BasicResBottleneckBlock,
         "endstop_dilation_res_bottleneck_block": EndstopDilationResBottleneckBlock,
         "endstop_divide_res_bottleneck_block": EndstopDivideResBottleneckBlock,
@@ -325,6 +327,53 @@ class ResBottleneckBlock(Module):
             "se_r": cfg.ANYNET.SE_R if cfg.ANYNET.SE_ON else 0,
             "num_classes": cfg.MODEL.NUM_CLASSES,
         }
+
+
+class ResBottleneckBlockEndProj(Module):
+    """Residual bottleneck block: x + f(x), f = bottleneck transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(ResBottleneckBlockEndproj, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            # self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            # self.bn = norm2d(w_out)
+            self.proj = EndstoppingDivide(w_in, w_out, 3, stride=stride)
+        self.f = BottleneckTransform(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(x)) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = BottleneckTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
+    @staticmethod
+    def get_params():
+        nones = [None for _ in cfg.ANYNET.DEPTHS]
+        return {
+            "stem_type": cfg.ANYNET.STEM_TYPE,
+            "stem_w": cfg.ANYNET.STEM_W,
+            "block_type": cfg.ANYNET.BLOCK_TYPE,
+            "depths": cfg.ANYNET.DEPTHS,
+            "widths": cfg.ANYNET.WIDTHS,
+            "strides": cfg.ANYNET.STRIDES,
+            "bot_muls": cfg.ANYNET.BOT_MULS if cfg.ANYNET.BOT_MULS else nones,
+            "group_ws": cfg.ANYNET.GROUP_WS if cfg.ANYNET.GROUP_WS else nones,
+            "se_r": cfg.ANYNET.SE_R if cfg.ANYNET.SE_ON else 0,
+            "num_classes": cfg.MODEL.NUM_CLASSES,
+        }
+
+
 
 
 class BasicBottleneckTransform(Module):
@@ -843,6 +892,37 @@ class ResStemEndstopDilation(Module):
         xe = self.e_bn(xe)
         xe = self.af(xe)
         x = torch.cat((x, xe), dim=1)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
+class ResStemFixSM(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemFixSM, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.pool = pool2d(w_out, 3, stride=2)
+        self.e = EndstoppingDivide(w_out, w_out, 3, stride=1, groups=w_out)
+        self.e_bn = norm2d(w_out)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        xe = self.e(x)
+        xe = self.af(xe)
+        x = torch.cat((x, xe), dim=1)
+        x = self.pool(x)
+
         return x
 
     @staticmethod
