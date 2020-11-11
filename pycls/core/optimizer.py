@@ -93,6 +93,7 @@ def construct_optimizer2(model):
         weight_decay=cfg.OPTIM.WEIGHT_DECAY,
         dampening=cfg.OPTIM.DAMPENING,
         nesterov=cfg.OPTIM.NESTEROV,
+        sm=cfg.OPTIM.SM,
     )
 
 
