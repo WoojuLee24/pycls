@@ -52,7 +52,7 @@ def construct_c_loader(data_path, split, batch_size, shuffle, drop_last):
             transforms.ToTensor(),
             normalize,
         ]))
-    sampler = DistributedSampler(val_dataset) if cfg.NUM_GPUS > 1 else None
+    sampler = DistributedSampler(dataset) if cfg.NUM_GPUS > 1 else None
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=int(cfg.TRAIN.BATCH_SIZE / cfg.NUM_GPUS), shuffle=False,
         num_workers=cfg.DATA_LOADER.NUM_WORKERS, pin_memory=True, sampler=sampler)
