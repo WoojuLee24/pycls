@@ -260,10 +260,10 @@ def test_model_iteration():
 
     c_path = os.path.join("/ws/data", cfg.TEST.DATASET)
     category_list = os.listdir(c_path)
-    for category in category_list:
+    for category in sorted(category_list):
         category_path = os.path.join(c_path, category)
         corruption_list = os.listdir(category_path)
-        for corruption in corruption_list:
+        for corruption in sorted(corruption_list):
             corruption_path = os.path.join(category_path, corruption)
             degree_list = sorted(os.listdir(corruption_path))
             for degree in degree_list:
