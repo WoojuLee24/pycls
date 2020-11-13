@@ -220,66 +220,6 @@ def test_model():
     test_epoch(test_loader, model, test_meter, 0)
 
 
-def train_model2():
-    """Trains the model."""
-    # Setup training/testing environment
-    setup_env()
-    # Construct the model, loss_fun, and optimizer
-    model = setup_model()
-    loss_fun = builders.build_loss_fun().cuda()
-    optimizer = optim.construct_optimizer(model)
-    # Load checkpoint or initial weights
-    start_epoch = 0
-    if cfg.TRAIN.AUTO_RESUME and cp.has_checkpoint():
-        file = cp.get_last_checkpoint()
-        epoch = cp.load_checkpoint(file, model, optimizer)
-        logger.info("Loaded checkpoint from: {}".format(file))
-        start_epoch = epoch + 1
-    elif cfg.TRAIN.WEIGHTS:
-        cp.load_checkpoint(cfg.TRAIN.WEIGHTS, model)
-        logger.info("Loaded initial weights from: {}".format(cfg.TRAIN.WEIGHTS))
-    # Create data loaders and meters
-    train_loader = loader.construct_train_loader2()
-    test_loader = loader.construct_test_loader2()
-    train_meter = meters.TrainMeter(len(train_loader))
-    test_meter = meters.TestMeter(len(test_loader))
-    # Compute model and loader timings
-    if start_epoch == 0 and cfg.PREC_TIME.NUM_ITER > 0:
-        benchmark.compute_time_full(model, loss_fun, train_loader, test_loader)
-    # Perform the training loop
-    logger.info("Start epoch: {}".format(start_epoch + 1))
-    for cur_epoch in range(start_epoch, cfg.OPTIM.MAX_EPOCH):
-        last_epoch = cur_epoch + 1 == cfg.OPTIM.MAX_EPOCH
-        # Train for one epoch
-        train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
-        # Compute precise BN stats
-        if cfg.BN.USE_PRECISE_STATS:
-            net.compute_precise_bn_stats(model, train_loader)
-        # Evaluate the model
-        if (cur_epoch + 1) % cfg.TRAIN.EVAL_PERIOD == 0 or last_epoch:
-            test_epoch(test_loader, model, test_meter, cur_epoch)
-        # Save a checkpoint
-        if (cur_epoch + 1) % cfg.TRAIN.CHECKPOINT_PERIOD == 0 or last_epoch:
-            file = cp.save_checkpoint(model, optimizer, cur_epoch)
-            logger.info("Wrote checkpoint to: {}".format(file))
-
-
-def test_model2():
-    """Evaluates a trained model."""
-    # Setup training/testing environment
-    setup_env()
-    # Construct the model
-    model = setup_model()
-    # Load model weights
-    cp.load_checkpoint(cfg.TEST.WEIGHTS, model)
-    logger.info("Loaded model weights from: {}".format(cfg.TEST.WEIGHTS))
-    # Create data loaders and meters
-    test_loader = loader.construct_test_loader2()
-    test_meter = meters.TestMeter(len(test_loader))
-    # Evaluate the model
-    test_epoch(test_loader, model, test_meter, 0)
-
-
 def time_model():
     """Times model."""
     # Setup training/testing environment
@@ -330,10 +270,10 @@ def test_model_iteration():
                 degree_path = os.path.join(corruption_path, degree)
                 # Create data loaders and meters
                 test_loader = loader.construct_c_loader(data_path=degree_path,
-                                                         split="",
-                                                         batch_size=int(cfg.TEST.BATCH_SIZE / cfg.NUM_GPUS),
-                                                         shuffle=False,
-                                                         drop_last=False,)
+                                                        split="",
+                                                        batch_size=int(cfg.TEST.BATCH_SIZE / cfg.NUM_GPUS),
+                                                        shuffle=False,
+                                                        drop_last=False,)
                 test_meter = meters.TestMeter(len(test_loader))
                 # Evaluate the model
                 test_epoch(test_loader, model, test_meter, 0)

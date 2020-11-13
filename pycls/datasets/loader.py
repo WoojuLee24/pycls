@@ -23,7 +23,7 @@ import torchvision.datasets as datasets
 # Supported datasets
 _DATASETS = {"cifar10": Cifar10, "imagenet": ImageNet,
              "imagenet-style": ImageNet, "imagenet-edge": ImageNet, "imagenet-edge-reverse": ImageNet,
-             "imagenet-a": ImageNet, "imagenet200": ImageNet, "imagenet200-c": Imagenet}
+             "imagenet-a": ImageNet, "imagenet200": ImageNet, "imagenet200-c": ImageNet}
 
 # Default data directory (/path/pycls/pycls/datasets/data)
 # _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -36,21 +36,27 @@ _PATHS = {"cifar10": "cifar10", "imagenet": "imagenet",
 
 
 def construct_c_loader(data_path, split, batch_size, shuffle, drop_last):
-    """Constructs the data loader for the given dataset."""
-    # Construct the dataset
-    dataset = ImageNet(data_path, split)
-    # Create a sampler for multi-process training
-    sampler = DistributedSampler(dataset) if cfg.NUM_GPUS > 1 else None
-    # Create a loader
+    """
+    Train construct wrapper.
+    w/o luminance augmentation,
+    w/o inception-style augmentation
+    """
+
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+    dataset = datasets.ImageFolder(
+        data_path,
+        transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+    sampler = DistributedSampler(val_dataset) if cfg.NUM_GPUS > 1 else None
     loader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=(False if sampler else shuffle),
-        sampler=sampler,
-        num_workers=cfg.DATA_LOADER.NUM_WORKERS,
-        pin_memory=cfg.DATA_LOADER.PIN_MEMORY,
-        drop_last=drop_last,
-    )
+        dataset, batch_size=int(cfg.TRAIN.BATCH_SIZE / cfg.NUM_GPUS), shuffle=False,
+        num_workers=cfg.DATA_LOADER.NUM_WORKERS, pin_memory=True, sampler=sampler)
+
     return loader
 
 
@@ -78,39 +84,6 @@ def _construct_loader(dataset_name, split, batch_size, shuffle, drop_last):
 
 
 def construct_train_loader():
-    """Train loader wrapper."""
-    return _construct_loader(
-        dataset_name=cfg.TRAIN.DATASET,
-        split=cfg.TRAIN.SPLIT,
-        batch_size=int(cfg.TRAIN.BATCH_SIZE / cfg.NUM_GPUS),
-        shuffle=True,
-        drop_last=True,
-    )
-
-
-
-def construct_test_loader2():
-    """Test loader wrapper."""
-    return _construct_loader(
-        dataset_name=cfg.TEST.DATASET,
-        split=cfg.TEST.SPLIT,
-        batch_size=int(cfg.TEST.BATCH_SIZE / cfg.NUM_GPUS),
-        shuffle=False,
-        drop_last=False,
-    )
-
-
-def shuffle(loader, cur_epoch):
-    """"Shuffles the data."""
-    err_str = "Sampler type '{}' not supported".format(type(loader.sampler))
-    assert isinstance(loader.sampler, (RandomSampler, DistributedSampler)), err_str
-    # RandomSampler handles shuffling automatically
-    if isinstance(loader.sampler, DistributedSampler):
-        # DistributedSampler shuffles data based on epoch
-        loader.sampler.set_epoch(cur_epoch)
-
-
-def construct_train_loader2():
     """
     Train construct wrapper.
     w/o luminance augmentation,
@@ -136,7 +109,7 @@ def construct_train_loader2():
     return train_loader
 
 
-def construct_val_loader2():
+def construct_test_loader():
     """
     Train construct wrapper.
     w/o luminance augmentation,
@@ -160,4 +133,17 @@ def construct_val_loader2():
         num_workers=cfg.DATA_LOADER.NUM_WORKERS, pin_memory=True, sampler=val_sampler)
 
     return val_loader
+
+
+def shuffle(loader, cur_epoch):
+    """"Shuffles the data."""
+    err_str = "Sampler type '{}' not supported".format(type(loader.sampler))
+    assert isinstance(loader.sampler, (RandomSampler, DistributedSampler)), err_str
+    # RandomSampler handles shuffling automatically
+    if isinstance(loader.sampler, DistributedSampler):
+        # DistributedSampler shuffles data based on epoch
+        loader.sampler.set_epoch(cur_epoch)
+
+
+
 
