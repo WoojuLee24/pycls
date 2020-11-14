@@ -23,7 +23,7 @@ import torchvision.datasets as datasets
 # Supported datasets
 _DATASETS = {"cifar10": Cifar10, "imagenet": ImageNet,
              "imagenet-style": ImageNet, "imagenet-edge": ImageNet, "imagenet-edge-reverse": ImageNet,
-             "imagenet-a": ImageNet, "imagenet200": ImageNet, "imagenet200-c": Imagenet}
+             "imagenet-a": ImageNet, "imagenet200": ImageNet, "imagenet200-c": ImageNet}
 
 # Default data directory (/path/pycls/pycls/datasets/data)
 # _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -32,7 +32,7 @@ _DATA_DIR = "/ws/data"
 # Relative data paths to default data directory
 _PATHS = {"cifar10": "cifar10", "imagenet": "imagenet",
           "imagenet-style": "imagenet-style", "imagenet-edge": "imagenet-edge", "imagenet-edge-reverse": "imagenet-edge-reverse",
-          "imagenet-a": "imagenet-a", "imagenet200": "imagneet200", "imagenet200-c": "imagenet200-c"}
+          "imagenet-a": "imagenet-a", "imagenet200": "imagenet200", "imagenet200-c": "imagenet200-c"}
 
 
 def construct_c_loader(data_path, split, batch_size, shuffle, drop_last):
@@ -89,7 +89,7 @@ def construct_train_loader():
 
 
 
-def construct_test_loader2():
+def construct_test_loader():
     """Test loader wrapper."""
     return _construct_loader(
         dataset_name=cfg.TEST.DATASET,
