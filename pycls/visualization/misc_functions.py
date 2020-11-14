@@ -1,6 +1,5 @@
 """
 Created on Thu Oct 21 11:09:09 2017
-
 @author: Utku Ozbulak - github.com/utkuozbulak
 """
 import os
@@ -21,10 +20,8 @@ from torchvision import models
 def convert_to_grayscale(im_as_arr):
     """
         Converts 3d image to grayscale
-
     Args:
         im_as_arr (numpy arr): RGB image with shape (D,W,H)
-
     returns:
         grayscale_im (numpy_arr): Grayscale image with shape (1,W,D)
     """
@@ -39,7 +36,6 @@ def convert_to_grayscale(im_as_arr):
 def save_gradient_images(gradient, file_name):
     """
         Exports the original gradient image
-
     Args:
         gradient (np arr): Numpy array of the gradient with shape (3, 224, 224)
         file_name (str): File name to be exported
@@ -56,7 +52,6 @@ def save_gradient_images(gradient, file_name):
 def save_class_activation_images(org_img, activation_map, file_name):
     """
         Saves cam activation map and activation map on the original image
-
     Args:
         org_img (PIL img): Original image
         activation_map (numpy arr): Activation map (grayscale) 0-255
@@ -144,7 +139,6 @@ def save_image(im, path):
 def preprocess_image(pil_im, resize_im=False):
     """
         Processes image for CNNs
-
     Args:
         PIL_img (PIL_img): Image to process
         resize_im (bool): Resize to 224 or not
@@ -200,7 +194,6 @@ def get_positive_negative_saliency(gradient):
         Generates positive and negative saliency maps based on the gradient
     Args:
         gradient (numpy arr): Gradient of the operation to visualize
-
     returns:
         pos_saliency ( )
     """
@@ -212,10 +205,8 @@ def get_positive_negative_saliency(gradient):
 def get_example_params(example_index):
     """
         Gets used variables for almost all visualizations, like the image, model etc.
-
     Args:
         example_index (int): Image id to use from examples
-
     returns:
         original_image (numpy arr): Original image read from the file
         prep_img (numpy_arr): Processed image
@@ -252,13 +243,11 @@ def get_example_path(target_class, label_path):
     jpg_list = os.listdir(class_path)
 
 
-def get_example(target_class, label_path, target_layer):
+def get_example(target_class, label_path, data_path, target_layer):
     """
         Gets used variables for almost all visualizations, like the image, model etc.
-
     Args:
         example_index (int): Image id to use from examples
-
     returns:
         original_image (numpy arr): Original image read from the file
         prep_img (numpy_arr): Processed image
@@ -270,7 +259,7 @@ def get_example(target_class, label_path, target_layer):
     with open(label_path, 'r') as f:
         data = json.loads(f.read())
     class_folder = data[target_class][0]
-    class_path = os.path.join("/ws/data/imagenet/val", class_folder)
+    class_path = os.path.join(data_path, class_folder)
     class_name = data[target_class][1]
 
     jpg_list = sorted(os.listdir(class_path))
