@@ -95,6 +95,39 @@ class ResStemCompare(Module):
         return cx
 
 
+class ResStemCompareDilationSeparationEntire(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCompareDilationSeparationEntire, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.compare = nn.Conv2d(w_out, w_out, 3, stride=1, padding=1, groups=w_out, bias=False, padding_mode='replicate')
+        self.compare_dilation = nn.Conv2d(w_out, w_out, 3, stride=1, padding=2, dilation=2, groups=w_out, bias=False, padding_mode='replicate')
+        self.pool = pool2d(w_out, 3, stride=2)
+
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x1 = self.compare(x)
+        x2 = self.compare_dilation(x)
+        x = x1+x2
+        x = self.af(x)
+        x = self.pool(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
 class ResStemEndstopDilation(Module):
     """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
 
