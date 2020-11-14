@@ -77,9 +77,10 @@ class GradCam():
 
 if __name__ == '__main__':
     # target layer and label
-    target_class = "30"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
+    target_class = "79"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
     label_path = "/ws/data/imagenet/imagenet_class_index.json"
-    target_layer = "stem.conv"  # "stem.conv" "s4.b3.f.b"
+    target_layer = "stem.e"  # "stem.conv" "s4.b3.f.b"
+    data_path = "/ws/data/imagenet-c/noise/gaussian_noise/3"    # "/ws/data/imagenet/val"
 
     # load the model
     config.load_cfg_fom_args("Test a trained classification model.")
@@ -89,7 +90,7 @@ if __name__ == '__main__':
     cp.load_checkpoint(cfg.TEST.WEIGHTS, pretrained_model)
 
     (original_image, prep_img, class_name, jpg) =\
-        get_example(target_class, label_path, target_layer)
+        get_example(target_class, label_path, data_path, target_layer)
 
     output_path = "/ws/external/visualization_results/grad_cam/" + class_name + "_" + target_layer + "_" + jpg
 

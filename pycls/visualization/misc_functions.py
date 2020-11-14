@@ -252,7 +252,7 @@ def get_example_path(target_class, label_path):
     jpg_list = os.listdir(class_path)
 
 
-def get_example(target_class, label_path, target_layer):
+def get_example(target_class, label_path, data_path, target_layer):
     """
         Gets used variables for almost all visualizations, like the image, model etc.
 
@@ -270,7 +270,7 @@ def get_example(target_class, label_path, target_layer):
     with open(label_path, 'r') as f:
         data = json.loads(f.read())
     class_folder = data[target_class][0]
-    class_path = os.path.join("/ws/data/imagenet/val", class_folder)
+    class_path = os.path.join(data_path, class_folder)
     class_name = data[target_class][1]
 
     jpg_list = sorted(os.listdir(class_path))

@@ -127,7 +127,7 @@ class CNNLayerVisualization():
         self.conv_output = 0
 
         self.size = 96
-        self.initial_learning_rate = 100
+        self.initial_learning_rate = 300
         self.weight_decay = 1e-6
         self.upscaling_factor = 1.2
         self.upscaling_steps = 10
@@ -195,7 +195,7 @@ class CNNLayerVisualization():
 
 
 if __name__ == '__main__':
-    cnn_layer = "s1.b2.f.b" # "s4.b3.f.b"  # "stem.conv"     # "s1.b2.f.b"
+    cnn_layer = "stem.e" # "s4.b3.f.b"  # "stem.conv"     # "s1.b2.f.b"
     filter_pos = 6
     # Fully connected layer is not needed
     # pretrained_model = models.vgg16(pretrained=True).features
