@@ -218,7 +218,7 @@ class EndstoppingDilationPReLUOld(nn.Conv2d):
 
 
 
-class CompareDoG(nn.Conv2d):
+class CompareFixedSM(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size=(5, 5), stride=1, padding=(2, 2), dilation=1, bias=True, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
                          bias=bias)
@@ -228,16 +228,22 @@ class CompareDoG(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
-        self.conv3d = nn.Conv2d(in_channels, out_channels, kernel_size, stride=self.stride, padding=self.padding)
-        self.relu = nn.ReLU()
-        self.bn = nn.BatchNorm3d(out_channels, eps=1e-5, momentum=0.1)
+        self.param = self.get_param(in_channels, out_channels, kernel_size, groups)
 
     def get_name(self):
         return type(self).__name__
 
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        kernel = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
+                               [-0.23, 0.17, 0.49, 0.17, -0.23],
+                               [-0.18, 0.49, 1, 0.49, -0.18],
+                               [-0.23, 0.17, 0.49, 0.17, -0.23],
+                               [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        kernel = kernel.repeat(out_channels, in_channels//groups, 1, 1)
+
+        return kernel
+
     def forward(self, x):
-        x = self.conv2d(x)
-        x = self.bn(x)
-        x = self.relu(x)
+        x = F.conv2d(x, self.param, stride=self.stride, padding=self.padding, groups=self.groups)
         return x
 

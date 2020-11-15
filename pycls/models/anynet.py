@@ -24,7 +24,7 @@ def get_stem_fun(stem_type):
         "res_stem_endstop_dilation": ResStemEndstopDilation,
         "endstop_dilation_stem": EndstopDilationStem,
         "res_stem_endstop_dilation_separation_entire": ResStemEndstopDilationSeparationEntire,
-        "res_stem_fix_sm": ResStemFixSM,
+        "res_stem_fix_sm_entire": ResStemFixSMEntire,
         "res_stem_endstop_divide_separation": ResStemEndstopDivideSeparation,
         "res_stem_endstop_divide_separation_entire": ResStemEndstopDivideSeparationEntire,
     }

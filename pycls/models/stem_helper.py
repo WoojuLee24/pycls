@@ -187,25 +187,22 @@ class ResStemEndstopDilationSeparationEntire(Module):
         return cx
 
 
-class ResStemFixSM(Module):
+class ResStemFixSMEntire(Module):
     """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
 
     def __init__(self, w_in, w_out):
-        super(ResStemFixSM, self).__init__()
+        super(ResStemFixSMEntire, self).__init__()
         self.conv = conv2d(w_in, w_out, 7, stride=2)
         self.bn = norm2d(w_out)
         self.af = activation()
+        self.e = CompareFixedSM(w_out, w_out, 5, stride=1, groups=w_out)
         self.pool = pool2d(w_out, 3, stride=2)
-        self.e = EndstoppingDivide(w_out, w_out, 3, stride=1, groups=w_out)
-        self.e_bn = norm2d(w_out)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
         x = self.af(x)
-        xe = self.e(x)
-        xe = self.af(xe)
-        x = torch.cat((x, xe), dim=1)
+        x = self.e(x)
         x = self.pool(x)
 
         return x
