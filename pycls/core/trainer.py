@@ -259,10 +259,10 @@ def test_model_iteration():
     logger.info("Loaded model weights from: {}".format(cfg.TEST.WEIGHTS))
 
     c_path = os.path.join("/ws/data", cfg.TEST.DATASET)
-    category_list = os.listdir(c_path)
+    category_list = sorted(os.listdir(c_path))
     for category in category_list:
         category_path = os.path.join(c_path, category)
-        corruption_list = os.listdir(category_path)
+        corruption_list = sorted(os.listdir(category_path))
         for corruption in corruption_list:
             corruption_path = os.path.join(category_path, corruption)
             degree_list = sorted(os.listdir(corruption_path))
