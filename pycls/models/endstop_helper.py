@@ -11,7 +11,7 @@ class EndstoppingDivide(nn.Conv2d):
     Using relu function to learn center-surround suppression
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=True, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
         self.in_channels = in_channels
@@ -74,7 +74,7 @@ class EndstoppingDilation(nn.Conv2d):
     Using relu function to learn center-surround suppression
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=True, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
         self.in_channels = in_channels
@@ -124,7 +124,7 @@ class EndstoppingDilationPReLU(nn.Conv2d):
     Using relu function to learn center-surround suppression
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=True, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
         self.in_channels = in_channels
@@ -219,7 +219,7 @@ class EndstoppingDilationPReLUOld(nn.Conv2d):
 
 
 class CompareFixedSM(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, kernel_size=(5, 5), stride=1, padding=(2, 2), dilation=1, bias=True, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=(5, 5), stride=1, padding=(2, 2), dilation=1, bias=False, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
                          bias=bias)
 
@@ -245,5 +245,42 @@ class CompareFixedSM(nn.Conv2d):
 
     def forward(self, x):
         x = F.conv2d(x, self.param, stride=self.stride, padding=self.padding, groups=self.groups)
+        return x
+
+
+class ComparingDilation(nn.Conv2d):
+
+    """
+    Comparing dilation kernel for solving aperture problem
+    Using relu function to learn center-surround suppression
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False)
+        self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=2, dilation=2, bias=False)
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
+        param = param.cuda()
+        fan_out = kernel_size * kernel_size * out_channels
+        param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
+        # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
+        return nn.Parameter(param)
+
+    def forward(self, x):
+        x1 = F.conv2d(x, self.param1, stride=self.stride, padding=1, dilation=1, groups=1)
+        x2 = F.conv2d(x, self.param2, stride=self.stride, padding=2, dilation=2, groups=1)
+        x = x1 + x2
+
         return x
 

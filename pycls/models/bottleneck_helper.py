@@ -436,6 +436,73 @@ class EndstopDilationResBottleneckBlock(Module):
         return cx
 
 
+class CompareDilationBottleneckTransform(Module):
+    """Bottleneck transformation: 1x1, 3x3 [+SE], 1x1."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(CompareDilationBottleneckTransform, self).__init__()
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        self.a = conv2d(w_in, w_b, 1)
+        self.a_bn = norm2d(w_b)
+        self.a_af = activation()
+        self.b = ComparingDilation(w_b, w_b, 3, stride=stride, groups=groups)
+        # self.b = EndstoppingDilation(w_b, w_b, 3, stride=stride, groups=groups)
+        self.b_bn = norm2d(w_b)
+        self.b_af = activation()
+        self.se = SE(w_b, w_se) if w_se else None
+        self.c = conv2d(w_b, w_out, 1)
+        self.c_bn = norm2d(w_out)
+        self.c_bn.final_bn = True
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        cx = conv2d_cx(cx, w_in, w_b, 1)
+        cx = norm2d_cx(cx, w_b)
+        cx = conv2d_cx(cx, w_b, w_b, 3, stride=stride, groups=groups)
+        cx = norm2d_cx(cx, w_b)
+        cx = SE.complexity(cx, w_b, w_se) if w_se else cx
+        cx = conv2d_cx(cx, w_b, w_out, 1)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class CompareDilationResBottleneckBlock(Module):
+    """Residual bottleneck block: x + f(x), f = bottleneck transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(CompareDilationResBottleneckBlock, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.bn = norm2d(w_out)
+        self.f = CompareDilationBottleneckTransform(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(x)) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = CompareDilationBottleneckTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
 class EndstopDilationPReLUBottleneckTransform(Module):
     """Bottleneck transformation: 1x1, 3x3 [+SE], 1x1."""
 
