@@ -164,7 +164,8 @@ def adjust_block_compatibility(ws, bs, gs):
 
 def init_weights(m):
     """Performs ResNet-style weight initialization."""
-    if isinstance(m, EndstoppingDilation) or isinstance(m, EndstoppingDivide) or isinstance(m, EndstoppingDilationPReLU):
+    if isinstance(m, EndstoppingDilation) or isinstance(m, EndstoppingDivide) or isinstance(m, EndstoppingDilationPReLU)\
+            or isinstance(m, ComparingDilation):
         pass
     elif isinstance(m, nn.Conv2d):
         # Note that there is no bias due to BN
