@@ -45,11 +45,11 @@ def get_block_fun(block_type):
         "res_basic_block": ResBasicBlock,
         "res_bottleneck_block": ResBottleneckBlock,
         "res_bottleneck_block_end_proj": ResBottleneckBlockEndProj,
-        "basic_res_bottleneck_block": BasicResBottleneckBlock,
         "endstop_dilation_res_bottleneck_block": EndstopDilationResBottleneckBlock,
         "endstop_divide_res_bottleneck_block": EndstopDivideResBottleneckBlock,
         "endstop_dilation_prelu_res_bottleneck_block": EndstopDilationPReLUResBottleneckBlock,
         "endstop_dilation_with_conv_res_bottleneck_block": EndstopDilationWithConvResBottleneckBlock,
+        "basic_res_bottleneck_block": BasicResBottleneckBlock,
     }
     err_str = "Block type '{}' not supported"
     assert block_type in block_funs.keys(), err_str.format(block_type)
