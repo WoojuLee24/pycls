@@ -74,7 +74,7 @@ class EndstoppingDilation(nn.Conv2d):
     Using relu function to learn center-surround suppression
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=True, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
         self.in_channels = in_channels
@@ -124,7 +124,7 @@ class EndstoppingDilationPReLU(nn.Conv2d):
     Using relu function to learn center-surround suppression
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=True, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
         self.in_channels = in_channels
@@ -219,7 +219,7 @@ class EndstoppingDilationPReLUOld(nn.Conv2d):
 
 
 class CompareFixedSM(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, kernel_size=(5, 5), stride=1, padding=(2, 2), dilation=1, bias=False, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=(5, 5), stride=1, padding=(2, 2), dilation=1, bias=True, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
                          bias=bias)
 
@@ -255,7 +255,7 @@ class ComparingDilation(nn.Conv2d):
     Using relu function to learn center-surround suppression
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=True, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
         self.in_channels = in_channels
