@@ -47,6 +47,7 @@ def get_block_fun(block_type):
         "res_bottleneck_block": ResBottleneckBlock,
         "res_bottleneck_block_end_proj": ResBottleneckBlockEndProj,
         "endstop_dilation_res_bottleneck_block": EndstopDilationResBottleneckBlock,
+        "endstop_dilation_res_bottleneck_block_wo_bn": EndstopDilationResBottleneckBlockWoBn,
         "compare_dilation_res_bottleneck_block": CompareDilationResBottleneckBlock,
         "endstop_divide_res_bottleneck_block": EndstopDivideResBottleneckBlock,
         "endstop_dilation_prelu_res_bottleneck_block": EndstopDilationPReLUResBottleneckBlock,
