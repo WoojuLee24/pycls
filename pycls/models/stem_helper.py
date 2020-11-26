@@ -45,7 +45,7 @@ class ResStem(Module):
 
     def __init__(self, w_in, w_out):
         super(ResStem, self).__init__()
-        self.conv = conv2d(w_in, w_out, 7, stride=3)
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
         self.bn = norm2d(w_out)
         self.af = activation()
         self.pool = pool2d(w_out, 3, stride=2)
@@ -156,6 +156,39 @@ class ResStemCompareDilationSeparationBnEntire(Module):
     @staticmethod
     def complexity(cx, w_in, w_out):
         cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
+class ResStemCompare3x3x3ConvFcBnEntire(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCompare3x3x3ConvFcBnEntire, self).__init__()
+        # self.conv = conv2d(w_in, w_out, 7, stride=2)
+        # self.bn = norm2d(w_out)
+        self.conv1 = conv2d(w_in, w_out, 3, stride=1)
+        self.bn1 = norm2d(w_out)
+        self.conv2 = conv2d(w_out, w_out, 3, stride=1)
+        self.bn2 = norm2d(w_out)
+        self.conv3 = conv2d(w_out, w_out, 3, strdie=2)
+        self.bn3 = norm2d(w_out)
+        self.af = activation()
+        self.pool = pool2d(w_out, 3, stride=2)
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3, stride=1)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_in, w_out, 3, stride=1)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_in, w_out, 3, stride=2)
         cx = norm2d_cx(cx, w_out)
         cx = pool2d_cx(cx, w_out, 3, stride=2)
         return cx

@@ -21,6 +21,7 @@ def get_stem_fun(stem_type):
         "res_stem_compare": ResStemCompare,
         "res_stem_compare_dilation_separation_entire": ResStemCompareDilationSeparationEntire,
         "res_stem_compare_dilation_separation_bn_entire": ResStemCompareDilationSeparationBnEntire,
+        "res_stem_compare_3x3x3_conv_fc_bn_entire": ResStemCompare3x3x3ConvFcBnEntire,
         "simple_stem_in": SimpleStem,
         "res_stem_endstop_dilation": ResStemEndstopDilation,
         "endstop_dilation_stem": EndstopDilationStem,
