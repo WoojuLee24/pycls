@@ -5,7 +5,7 @@ ANYNET:
   STEM_TYPE: res_stem_cifar
   STEM_W: 16
   BLOCK_TYPE: res_basic_block
-  DEPTHS: [3, 3, 3]
+  DEPTHS: [9, 9, 9]
   WIDTHS: [16, 32, 64]
   STRIDES: [1, 2, 2]
 BN:
