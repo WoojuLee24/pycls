@@ -12,6 +12,7 @@ import os
 import torch
 from pycls.core.config import cfg
 from pycls.datasets.cifar10 import Cifar10
+from pycls.datasets.cifar100 import Cifar100
 from pycls.datasets.imagenet import ImageNet
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler
@@ -21,7 +22,7 @@ import torchvision.datasets as datasets
 
 
 # Supported datasets
-_DATASETS = {"cifar10": Cifar10, "imagenet": ImageNet,
+_DATASETS = {"cifar10": Cifar10, "cifar100": Cifar100, "imagenet": ImageNet,
              "imagenet-style": ImageNet, "imagenet-edge": ImageNet, "imagenet-edge-reverse": ImageNet,
              "imagenet-a": ImageNet, "imagenet200": ImageNet, "imagenet200-c": ImageNet}
 
@@ -30,7 +31,7 @@ _DATASETS = {"cifar10": Cifar10, "imagenet": ImageNet,
 _DATA_DIR = "/ws/data"
 
 # Relative data paths to default data directory
-_PATHS = {"cifar10": "cifar10", "imagenet": "imagenet",
+_PATHS = {"cifar10": "cifar10", "cifar100": "cifar100", "imagenet": "imagenet",
           "imagenet-style": "imagenet-style", "imagenet-edge": "imagenet-edge", "imagenet-edge-reverse": "imagenet-edge-reverse",
           "imagenet-a": "imagenet-a", "imagenet200": "imagenet200", "imagenet200-c": "imagenet200-c"}
 
