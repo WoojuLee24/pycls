@@ -1,7 +1,7 @@
 import os
 
-path = "/ws/external/checkpoints/c1000/baseline_3gpu/imagenet-c_stdout.log"
-new_path = "/ws/external/checkpoints/c1000/baseline_3gpu/imagenet-c_stdout_revised.log"
+path = "/ws/external/checkpoints/c200/c200_End_bottleneck_dilation_fc_entire/imagenet-c/stdout.log"
+new_path = "/ws/external/checkpoints/c200/c200_End_bottleneck_dilation_fc_entire/imagenet-c/stdout_revised.log"
 data_path = "/ws/data/imagenet-c"
 
 with open(path, 'r') as f:
