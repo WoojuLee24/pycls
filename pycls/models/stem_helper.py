@@ -402,8 +402,16 @@ class ResStemCompare3x3x3ConvFcBnEntire(Module):
         self.pool = pool2d(w_out, 3, stride=2)
 
     def forward(self, x):
-        for layer in self.children():
-            x = layer(x)
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.af(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.af(x)
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = self.af(x)
+        x = self.pool(x)
         return x
 
     @staticmethod
