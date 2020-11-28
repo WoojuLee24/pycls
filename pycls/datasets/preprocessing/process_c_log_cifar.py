@@ -28,8 +28,7 @@ for row in rows:
         min_top1_err = row_elem[7].split(",")[0]
         min_top5_err = row_elem[8].split(",")[0]
         # print("catetory: {}, corruption_class: {}, level: {}, min_top1_err: {}".format(catetory, corruption_class, level, min_top1_err))
-        if k % 5 == 0:
-            errs.append(corruptions[k//5])
+        errs.append(corruptions[k])
         errs.append(float(min_top1_err)/100)
         # errs.append(f"{float(min_top1_err) / 100:0.4f}")
         k += 1
