@@ -396,7 +396,7 @@ class ResStemCompare3x3x3ConvFcBnEntire(Module):
         self.bn1 = norm2d(w_out)
         self.conv2 = conv2d(w_out, w_out, 3, stride=1)
         self.bn2 = norm2d(w_out)
-        self.conv3 = conv2d(w_out, w_out, 3, strdie=2)
+        self.conv3 = conv2d(w_out, w_out, 3, stride=2)
         self.bn3 = norm2d(w_out)
         self.af = activation()
         self.pool = pool2d(w_out, 3, stride=2)
