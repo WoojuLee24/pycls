@@ -13,6 +13,7 @@ import torch
 from pycls.core.config import cfg
 from pycls.datasets.cifar10 import Cifar10
 from pycls.datasets.cifar100 import Cifar100
+from pycls.datasets.cifarc import CifarC
 from pycls.datasets.imagenet import ImageNet
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler
@@ -22,8 +23,8 @@ import torchvision.datasets as datasets
 
 
 # Supported datasets
-_DATASETS = {"cifar10": Cifar10, "cifar100": Cifar100, "imagenet": ImageNet,
-             "imagenet-style": ImageNet, "imagenet-edge": ImageNet, "imagenet-edge-reverse": ImageNet,
+_DATASETS = {"cifar10": Cifar10, "cifar100": Cifar100, "cifar10-c": CifarC, "cifar100-c": CifarC,
+            "imagenet": ImageNet,"imagenet-style": ImageNet, "imagenet-edge": ImageNet, "imagenet-edge-reverse": ImageNet,
              "imagenet-a": ImageNet, "imagenet200": ImageNet, "imagenet200-c": ImageNet}
 
 # Default data directory (/path/pycls/pycls/datasets/data)
@@ -31,8 +32,8 @@ _DATASETS = {"cifar10": Cifar10, "cifar100": Cifar100, "imagenet": ImageNet,
 _DATA_DIR = "/ws/data"
 
 # Relative data paths to default data directory
-_PATHS = {"cifar10": "cifar10", "cifar100": "cifar100", "imagenet": "imagenet",
-          "imagenet-style": "imagenet-style", "imagenet-edge": "imagenet-edge", "imagenet-edge-reverse": "imagenet-edge-reverse",
+_PATHS = {"cifar10": "cifar10", "cifar100": "cifar100", "cifar10-c": "cifar10-c", "cifar100-c": "cifar100-c",
+          "imagenet": "imagenet", "imagenet-style": "imagenet-style", "imagenet-edge": "imagenet-edge", "imagenet-edge-reverse": "imagenet-edge-reverse",
           "imagenet-a": "imagenet-a", "imagenet200": "imagenet200", "imagenet200-c": "imagenet200-c"}
 
 
@@ -53,6 +54,26 @@ def construct_c_loader(data_path, split, batch_size, shuffle, drop_last):
         drop_last=drop_last,
     )
     return loader
+
+
+def construct_cifar_c_loader(data_path, split, batch_size, shuffle, drop_last):
+    """Constructs the data loader for the given dataset."""
+    # Construct the dataset
+    dataset = CifarC(data_path, split)
+    # Create a sampler for multi-process training
+    sampler = DistributedSampler(dataset) if cfg.NUM_GPUS > 1 else None
+    # Create a loader
+    loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=(False if sampler else shuffle),
+        sampler=sampler,
+        num_workers=cfg.DATA_LOADER.NUM_WORKERS,
+        pin_memory=cfg.DATA_LOADER.PIN_MEMORY,
+        drop_last=drop_last,
+    )
+    return loader
+
 
 
 def _construct_loader(dataset_name, split, batch_size, shuffle, drop_last):

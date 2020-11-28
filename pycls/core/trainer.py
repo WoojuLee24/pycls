@@ -295,3 +295,65 @@ def test_model_a():
     test_meter = meters.TestMeter(len(test_loader))
     # Evaluate the model
     test_epoch_imagenet_a(test_loader, model, test_meter, 0)
+
+
+def test_model_iteration_cifar():
+    """Evaluates a trained model."""
+    # Setup training/testing environment
+    setup_env()
+    # Construct the model
+    model = setup_model()
+    # Load model weights
+    cp.load_checkpoint(cfg.TEST.WEIGHTS, model)
+    logger.info("Loaded model weights from: {}".format(cfg.TEST.WEIGHTS))
+
+    c_path = os.path.join("/ws/data", cfg.TEST.DATASET)
+    batch_names = ["gaussian_noise.npy", "shot_noise.npy", "impulse_noise.npy",
+                   "defocus_blur.npy", "glass_blur.npy", "motion_blur.npy", "zoom_blur.npy",
+                   "snow.npy", "frost.npy", "fog.npy", "brightness.npy",
+                   "contrast.npy", "elastic_transform.npy", "pixelate.npy", "jpeg_compression.npy",
+                   "speckle_noise.npy", "gaussian_blur.npy", "spatter.npy", "saturate.npy"]
+
+    for catetory in batch_names:
+        test_loader = loader.construct_cifar_c_loader(data_path=c_path,
+                                                split=catetory,
+                                                batch_size=int(cfg.TEST.BATCH_SIZE / cfg.NUM_GPUS),
+                                                shuffle=False,
+                                                drop_last=False, )
+        test_meter = meters.TestMeter(len(test_loader))
+        # Evaluate the model
+        test_epoch(test_loader, model, test_meter, 0)
+
+
+def test_model_iteration():
+    """
+    Evaluates a trained model.
+    imagenet-c test
+    """
+    # Setup training/testing environment
+    setup_env()
+    # Construct the model
+    model = setup_model()
+    # Load model weights
+    cp.load_checkpoint(cfg.TEST.WEIGHTS, model)
+    logger.info("Loaded model weights from: {}".format(cfg.TEST.WEIGHTS))
+
+    c_path = os.path.join("/ws/data", cfg.TEST.DATASET)
+    category_list = sorted(os.listdir(c_path))
+    for category in category_list:
+        category_path = os.path.join(c_path, category)
+        corruption_list = sorted(os.listdir(category_path))
+        for corruption in corruption_list:
+            corruption_path = os.path.join(category_path, corruption)
+            degree_list = sorted(os.listdir(corruption_path))
+            for degree in degree_list:
+                degree_path = os.path.join(corruption_path, degree)
+                # Create data loaders and meters
+                test_loader = loader.construct_c_loader(data_path=degree_path,
+                                                         split="",
+                                                         batch_size=int(cfg.TEST.BATCH_SIZE / cfg.NUM_GPUS),
+                                                         shuffle=False,
+                                                         drop_last=False,)
+                test_meter = meters.TestMeter(len(test_loader))
+                # Evaluate the model
+                test_epoch(test_loader, model, test_meter, 0)
