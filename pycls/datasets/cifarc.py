@@ -42,7 +42,9 @@ class CifarC(torch.utils.data.Dataset):
         labels = list(np.load(self._label_path, mmap_mode='r'))
         # Combine and reshape the inputs
         # inputs = np.vstack(inputs).astype(np.float32) # [50000]
-        inputs = inputs.reshape((-1, 3, cfg.TRAIN.IM_SIZE, cfg.TRAIN.IM_SIZE))
+
+        # inputs = inputs.reshape((-1, 3, cfg.TRAIN.IM_SIZE, cfg.TRAIN.IM_SIZE))
+        inputs = np.swapaxes(inputs, 3, 1)
         return inputs, labels
 
     def _prepare_im(self, im):
