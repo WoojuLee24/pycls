@@ -148,6 +148,8 @@ class ResStemCifarCompare3x3x3ConvDcBnEntire(Module):
         self.bn1 = norm2d(w_out)
         self.conv2 = conv2d(w_out, w_out, 3, groups=w_out)
         self.bn2 = norm2d(w_out)
+        self.conv3 = conv2d(w_out, w_out, 3 ,groups=w_out)
+        self.bn3 = norm2d(w_out)
         self.af = activation()
 
 
@@ -158,11 +160,82 @@ class ResStemCifarCompare3x3x3ConvDcBnEntire(Module):
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.af(x)
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = self.af(x)
         return x
 
     @staticmethod
     def complexity(cx, w_in, w_out):
         cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_out, w_out, 3, groups=w_out)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_out, w_out, 3, groups=w_out)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResStemCifarCompare3x3x2ConvDcBnEntire1Act(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarCompare3x3x2ConvDcBnEntire1Act, self).__init__()
+        self.conv1 = conv2d(w_in, w_out, 3)
+        self.bn1 = norm2d(w_out)
+        self.conv2 = conv2d(w_out, w_out, 3, groups=w_out)
+        self.bn2 = norm2d(w_out)
+        self.af = activation()
+
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.af(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_out, w_out, 3, groups=w_out)
+        cx = norm2d_cx(cx, w_out)
+
+        return cx
+
+
+class ResStemCifarCompare3x3x3ConvDcBnEntire1Act(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarCompare3x3x3ConvDcBnEntire1Act, self).__init__()
+        self.conv1 = conv2d(w_in, w_out, 3)
+        self.bn1 = norm2d(w_out)
+        self.conv2 = conv2d(w_out, w_out, 3, groups=w_out)
+        self.bn2 = norm2d(w_out)
+        self.conv3 = conv2d(w_out, w_out, 3, groups=w_out)
+        self.bn3 = norm2d(w_out)
+        self.af = activation()
+
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.af(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = self.af(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_out, w_out, 3, groups=w_out)
         cx = norm2d_cx(cx, w_out)
         cx = conv2d_cx(cx, w_out, w_out, 3, groups=w_out)
         cx = norm2d_cx(cx, w_out)

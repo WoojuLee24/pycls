@@ -21,6 +21,8 @@ def get_stem_fun(stem_type):
         "res_stem_cifar_compare_3x3x3_conv_fc_bn_entire": ResStemCifarCompare3x3x3ConvFcBnEntire,
         "res_stem_cifar_compare_3x3x2_conv_dc_bn_entire": ResStemCifarCompare3x3x2ConvDcBnEntire,
         "res_stem_cifar_compare_3x3x3_conv_dc_bn_entire": ResStemCifarCompare3x3x2ConvDcBnEntire,
+        "res_stem_cifar_compare_3x3x2_conv_dc_bn_entire_1act": ResStemCifarCompare3x3x2ConvDcBnEntire1Act,
+        "res_stem_cifar_compare_3x3x3_conv_dc_bn_entire_1act": ResStemCifarCompare3x3x3ConvDcBnEntire1Act,
         "res_stem_in": ResStem,
         "res_stem_compare": ResStemCompare,
         "res_stem_compare_dilation_separation_entire": ResStemCompareDilationSeparationEntire,
