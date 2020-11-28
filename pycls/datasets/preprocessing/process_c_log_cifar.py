@@ -6,7 +6,7 @@ parser.add_argument("--path", default="/ws/external", type=str)
 
 args = parser.parse_args()
 path = os.path.join(args.path, "imagenet-c/stdout.log")
-new_path = os.path.join(args.apth, "imagenet-c/stdout_revised.log")
+new_path = os.path.join(args.path, "imagenet-c/stdout_revised.log")
 
 # path = "/ws/external/checkpoints/c200/c200_End_bottleneck_dilation_fc_entire/imagenet-c/stdout.log"
 # new_path = "/ws/external/checkpoints/c200/c200_End_bottleneck_dilation_fc_entire/imagenet-c/stdout_revised.log"
