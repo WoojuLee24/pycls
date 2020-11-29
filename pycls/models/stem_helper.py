@@ -287,28 +287,27 @@ class ResStem(Module):
         return cx
 
 
-class ResStemCompare(Module):
+class ResStemCompare3x3SeparationEntire(Module):
     """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
 
     def __init__(self, w_in, w_out):
-        super(ResStemCompare, self).__init__()
-        self.conv = conv2d(w_in, w_out, 7, stride=2)
-        self.bn = norm2d(w_out)
+        super(ResStemCompare3x3SeparationEntire, self).__init__()
+        self.conv1 = conv2d(w_in, w_out, 7, stride=2)
+        self.bn1 = norm2d(w_out)
+        self.conv2 = conv2d(w_out, w_out, 3, stride=1, groups=w_out)
+        self.bn2 = norm2d(w_out)
         self.af = activation()
         self.pool = pool2d(w_out, 3, stride=2)
-        self.compare = conv2d(w_out, w_out, 3, stride=1, groups=w_out)
-        self.compare_bn = norm2d(w_out)
+
 
     def forward(self, x):
-        x = self.conv(x)
-        x = self.bn(x)
+        x = self.conv1(x)
+        x = self.bn1(x)
         x = self.af(x)
-        xe = self.compare(x)
-        xe = self.compare_bn(xe)
-        xe = self.af(xe)
-        x = torch.cat((x, xe), dim=1)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.af(x)
         x = self.pool(x)
-
         return x
 
     @staticmethod
