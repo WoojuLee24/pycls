@@ -17,6 +17,7 @@ def get_stem_fun(stem_type):
     """Retrieves the stem function by name."""
     stem_funs = {
         "res_stem_cifar": ResStemCifar,
+        "res_stem_cifar_divide_3x3_conv_dc_entire": ResStemCifarDivide3x3ConvDcEntire,
         "res_stem_cifar_compare_7x7_conv_fc_bn_entire": ResStemCifar7x7ConvFcBnEntire,
         "res_stem_cifar_compare_3x3x2_conv_fc_bn_entire": ResStemCifarCompare3x3x2ConvFcBnEntire,
         "res_stem_cifar_compare_3x3x3_conv_fc_bn_entire": ResStemCifarCompare3x3x3ConvFcBnEntire,
