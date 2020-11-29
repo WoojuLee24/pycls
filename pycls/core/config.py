@@ -270,6 +270,8 @@ _C.TRAIN.AUTO_RESUME = True
 # Weights to start training from
 _C.TRAIN.WEIGHTS = ""
 
+# Color augmentation or not
+_C.TRAIN.COLOR_AUG = True
 
 # --------------------------------- Testing options ---------------------------------- #
 _C.TEST = CfgNode()
