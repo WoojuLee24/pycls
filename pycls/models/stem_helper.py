@@ -72,7 +72,7 @@ class ResStemCifarDivide5x5ConvDcEntire(Module):
         super(ResStemCifarDivide5x5ConvDcEntire, self).__init__()
         self.conv = conv2d(w_in, w_out, 3)
         self.bn = norm2d(w_out)
-        self.e = EndstoppingDivide5x5(w_out, w_out, 3, stride=1, groups=w_out)
+        self.e = EndstoppingDivide5x5(w_out, w_out, 5, stride=1, groups=w_out)
         self.af = activation()
 
     def forward(self, x):
