@@ -37,14 +37,17 @@ def get_stem_fun(stem_type):
         "res_stem_endstop_dilation": ResStemEndstopDilation,
         "endstop_dilation_stem": EndstopDilationStem,
         "res_stem_endstop_dilation_separation_entire": ResStemEndstopDilationSeparationEntire,
-        "res_stem_endstop_dilation_separation_bn_entire": ResStemEndstopDilationSeparationBnEntire,
+        "res_stem_endstop_dilation_group_entire": ResStemEndstopDilationGroupEntire,
+        # "res_stem_endstop_dilation_separation_bn_entire": ResStemEndstopDilationSeparationBnEntire,
         "res_stem_endstop_dilation_prelu_separation_entire": ResStemEndstopDilationPreluSeparationEntire,
-        "res_stem_endstop_dilation_prelu_separation_bn_entire": ResStemEndstopDilationPreluSeparationBnEntire,
-        "res_stem_endstop_dilation_fc_entire": ResStemEndstopDilationFcEntire,
+        # "res_stem_endstop_dilation_prelu_separation_bn_entire": ResStemEndstopDilationPreluSeparationBnEntire,
+        # "res_stem_endstop_dilation_fc_entire": ResStemEndstopDilationFcEntire,
         "res_stem_fix_sm_entire": ResStemFixSMEntire,
         "res_stem_endstop_divide_separation": ResStemEndstopDivideSeparation,
         "res_stem_endstop_divide_3x3_separation_entire": ResStemEndstopDivide3x3SeparationEntire,
         "res_stem_endstop_divide_5x5_separation_entire": ResStemEndstopDivide5x5SeparationEntire,
+        "res_stem_endstop_divide_3x3_group_entire": ResStemEndstopDivide3x3GroupEntire,
+        "res_stem_endstop_divide_5x5_group_entire": ResStemEndstopDivide5x5GroupEntire,
     }
     err_str = "Stem type '{}' not supported"
     assert stem_type in stem_funs.keys(), err_str.format(stem_type)
