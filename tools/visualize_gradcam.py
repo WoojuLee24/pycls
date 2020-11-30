@@ -76,7 +76,7 @@ class GradCam():
 
 if __name__ == '__main__':
     # target layer and label
-    target_class = "79"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
+    target_class = "30"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
     label_path = "/ws/data/imagenet/imagenet_class_index.json"
     target_layer = "stem.e"  # "stem.conv" "s4.b3.f.b"
     data_path = "/ws/data/imagenet-c/noise/gaussian_noise/3"    # "/ws/data/imagenet/val"

@@ -14,7 +14,7 @@ import math
 import os
 
 
-def visualize_weight(model, target_layer, path=None, max_num=100, show=None):
+def visualize_weight(model, target_layer, path=None, max_num=100, show=None, mode=None):
 
     """Visualize weight and activation matrices learned
     during the optimization process. Works for any size of kernels.
@@ -28,7 +28,11 @@ def visualize_weight(model, target_layer, path=None, max_num=100, show=None):
 
     """
     model_state = model.state_dict()
-    kernels = model_state[target_layer]
+    if mode == None:
+        kernels = model_state[target_layer]
+    elif mode == "dilation":
+
+    elif mode == "divide":
 
     # if not os.path.exists(path):
     #     os.makedirs(path)
@@ -73,7 +77,8 @@ if __name__ == '__main__':
     # target layer and label
     target_class = "30"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
     label_path = "/ws/data/imagenet/imagenet_class_index.json"
-    target_layer = "stem.e.weight"  # "stem.conv" "s4.b3.f.b"
+    target_layer = "stem.e.param1"  # "stem.conv" "s4.b3.f.b"
+    data_path = "/ws/data/imagenet-c/noise/gaussian_noise/3"
 
     # load the model
     config.load_cfg_fom_args("Test a trained classification model.")
@@ -82,10 +87,10 @@ if __name__ == '__main__':
     pretrained_model = setup_model()
     cp.load_checkpoint(cfg.TEST.WEIGHTS, pretrained_model)
 
-    (original_image, prep_img, class_name, jpg) =\
-        get_example(target_class, label_path, target_layer)
-
-    original_path = "/ws/external/visualization_results/filter/" + class_name + "_" + jpg
-    output_path = "/ws/external/visualization_results/filter/" + class_name + "_" + target_layer + "_" + jpg
+    # (original_image, prep_img, class_name, jpg) =\
+    #     get_example(target_class, label_path, data_path, target_layer)
+    #
+    # original_path = "/ws/external/visualization_results/filter/" + class_name + "_" + jpg
+    output_path = "/ws/external/visualization_results/filter/" + target_layer + ".jpg"
 
     visualize_weight(pretrained_model, target_layer, path=output_path, max_num=100)

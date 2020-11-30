@@ -38,71 +38,17 @@ class FeatureMap():
         feature_maps = self.conv_output.data[0].cpu().numpy()
         feature_maps = feature_maps - feature_maps.min()
         feature_maps = feature_maps / (feature_maps.max() + 0.000000000001)
-
+        feature_maps = feature_maps[:25]
         for i, feature_map in enumerate(feature_maps):
             save_image(feature_map, self.path.format(i))
 
 
-def visualize_feature_map(model, target_layer, path=None,  cols=None, show=False):
-
-    """Visualize weight and activation matrices learned
-    during the optimization process. Works for any size of kernels.
-
-    Arguments
-    =========
-    kernels: Weight or activation matrix. Must be a high dimensional
-    Numpy array. Tensors will not work.
-    path: Path to save the visualizations.
-    cols: TODO: Number of columns (doesn't work completely yet.)
-
-    """
-    model_state = model.state_dict()
-    kernels = model_state[target_layer]
-
-    # if not os.path.exists(path):
-    #     os.makedirs(path)
-    #
-    fpath = path
-    kernels_data = kernels.cpu().data.numpy()
-    kernels = kernels.cpu().detach().clone().numpy()
-    kernels = kernels - kernels.min()
-    kernels = kernels / (kernels.max() + 0.000000000001)
-
-    N = kernels.shape[0]
-    C = kernels.shape[1]
-    Tot = N * C  # inchannel, outchannel
-
-    cols = int(math.sqrt(Tot))
-    rows = Tot // cols + 1
-    pos = range(1, Tot + 1)
-
-    fig = plt.figure()
-    fig.tight_layout()
-    k = 1
-    for i in range(kernels.shape[0]):
-        for j in range(kernels.shape[1]):
-            img = kernels[i][j]
-            ax = fig.add_subplot(rows, cols, k)
-            ax.imshow(img, cmap='gray')
-            plt.axis('off')
-            k += 1
-
-    # if not os.path.exists(path + "t"+ str(m)):
-    #     os.makedirs(path + "t" + str(m))
-    plt.subplots_adjust(wspace=0.1, hspace=0.1)
-    if fpath:
-        plt.savefig(fpath, dpi=100)
-        plt.close(fig)
-    if show:
-        plt.show()
-
-
-
 if __name__ == '__main__':
     # target layer and label
-    target_class = "52"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
+    target_class = "30"  # black swan 100, bullfrog 30, centipede 79, thunder snake 52
     label_path = "/ws/data/imagenet/imagenet_class_index.json"
-    target_layer = "stem.conv"  # "stem.conv" "s4.b3.f.b"
+    target_layer = "s1.b1.f.b"  # "stem.conv" "s1.b1.f.b"
+    data_path = "/ws/data/imagenet-c/noise/gaussian_noise/3"
 
     # load the model
     config.load_cfg_fom_args("Test a trained classification model.")
@@ -112,7 +58,7 @@ if __name__ == '__main__':
     cp.load_checkpoint(cfg.TEST.WEIGHTS, pretrained_model)
 
     (original_image, prep_img, class_name, jpg) =\
-        get_example(target_class, label_path, target_layer)
+        get_example(target_class, label_path, data_path, target_layer)
 
     original_path = "/ws/external/visualization_results/feature_map/" + class_name + "_" + jpg
     output_path = "/ws/external/visualization_results/feature_map/" + class_name + "_" + target_layer + "_{}_" + jpg

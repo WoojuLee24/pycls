@@ -1,8 +1,8 @@
 MODEL:
   TYPE: anynet
-  NUM_CLASSES: 1000
+  NUM_CLASSES: 200
 ANYNET:
-  STEM_TYPE: res_stem_endstop_divide_5x5_separation_entire
+  STEM_TYPE: res_stem_endstop_divide_3x3_separation_entire
   STEM_W: 64
   BLOCK_TYPE: res_bottleneck_block
   STRIDES: [1, 2, 2, 2]
@@ -12,20 +12,20 @@ ANYNET:
   GROUP_WS: [64, 128, 256, 512]
 OPTIM:
   LR_POLICY: cos
-  BASE_LR: 0.075
+  BASE_LR: 0.05
   MAX_EPOCH: 100
   MOMENTUM: 0.9
   WEIGHT_DECAY: 5e-5
 TRAIN:
-  DATASET: imagenet
+  DATASET: imagenet200
   IM_SIZE: 224
   BATCH_SIZE: 96
   COLOR_AUG: False
 TEST:
-  DATASET: imagenet
+  DATASET: imagenet200
   IM_SIZE: 256
   BATCH_SIZE: 60
 DATA_LOADER:
   NUM_WORKERS: 4
-NUM_GPUS: 3
+NUM_GPUS: 2
 OUT_DIR: .
