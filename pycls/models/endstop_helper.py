@@ -87,17 +87,17 @@ class EndstoppingDivide5x5(nn.Conv2d):
     def get_threshold_param(self, in_channels, out_channels, kernel_size, groups):
 
         center = torch.tensor([[0, 0, 0, 0, 0],
-                               [0, 0.01, 0.01, 0.01, 0],
-                               [0, 0.01, 0.01, 0.01, 0],
-                               [0, 0.01, 0.01, 0.01, 0],
+                               [0, 0.017, 0.049, 0.017, 0],
+                               [-0.018, 0.049, 0.1, 0.049, 0],
+                               [0, 0.017, 0.049, 0.017, 0],
                                [0, 0, 0, 0, 0]], requires_grad=False).cuda()
         center = center.repeat(out_channels, in_channels//groups, 1, 1)
 
-        surround = torch.tensor([[-0.01*9/16, -0.01*9/16, -0.01*9/16, -0.01*9/16, -0.01*9/16],
-                               [-0.01*9/16, 0, 0, 0, -0.01*9/16],
-                               [-0.01*9/16, 0, 0, 0, -0.01*9/16],
-                               [-0.01*9/16, 0, 0, 0, -0.01*9/16],
-                               [-0.01*9/16, -0.01*9/16, -0.01*9/16, -0.01*9/16, -0.01*9/16]], requires_grad=False).cuda()
+        surround = torch.tensor([[-0.027, -0.023, -0.018, -0.023, -0.027],
+                               [-0.023, 0, 0, 0, -0.023],
+                               [-0.018, 0, 0, 0, -0.018],
+                               [-0.023, 0, 0, 0, -0.023],
+                               [-0.027, -0.023, -0.018, -0.023, 0.027]], requires_grad=False).cuda()
         surround = surround.repeat(out_channels, in_channels // groups, 1, 1)
 
         return center, surround
