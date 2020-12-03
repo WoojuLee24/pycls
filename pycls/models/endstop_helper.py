@@ -88,7 +88,7 @@ class EndstoppingDivide5x5(nn.Conv2d):
 
         center = torch.tensor([[0, 0, 0, 0, 0],
                                [0, 0.017, 0.049, 0.017, 0],
-                               [-0.018, 0.049, 0.1, 0.049, 0],
+                               [0, 0.049, 0.1, 0.049, 0],
                                [0, 0.017, 0.049, 0.017, 0],
                                [0, 0, 0, 0, 0]], requires_grad=False).cuda()
         center = center.repeat(out_channels, in_channels//groups, 1, 1)
@@ -97,7 +97,7 @@ class EndstoppingDivide5x5(nn.Conv2d):
                                [-0.023, 0, 0, 0, -0.023],
                                [-0.018, 0, 0, 0, -0.018],
                                [-0.023, 0, 0, 0, -0.023],
-                               [-0.027, -0.023, -0.018, -0.023, 0.027]], requires_grad=False).cuda()
+                               [-0.027, -0.023, -0.018, -0.023, -0.027]], requires_grad=False).cuda()
         surround = surround.repeat(out_channels, in_channels // groups, 1, 1)
 
         return center, surround
@@ -136,7 +136,7 @@ class EndstoppingDivide5x5(nn.Conv2d):
 class EndstoppingDoG5x5(nn.Conv2d):
 
     """
-    End-stopping Divide kernel for solving aperture problem
+    End-stopping Difference of Gaussian kernel for solving aperture problem
     Using relu function to learn center-surround suppression
     """
 
@@ -151,10 +151,10 @@ class EndstoppingDoG5x5(nn.Conv2d):
         self.padding = padding
         self.replication_pad = nn.ReplicationPad2d(2)
         self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
-        self.center_threshold, self.surround_threshold = self.get_threshold_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+
 
     def get_param(self, in_channels, out_channels, kernel_size, groups):
-        param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
+        param = torch.zeros([out_channels, in_channels//groups, 2], dtype=torch.float, requires_grad=True)
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
@@ -162,39 +162,21 @@ class EndstoppingDoG5x5(nn.Conv2d):
         return nn.Parameter(param)
 
 
-    def get_threshold_param(self, in_channels, out_channels, kernel_size, groups):
-
-        center = torch.tensor([[0, 0, 0, 0, 0],
-                               [0, 0.17, 0.49, 0.17, 0],
-                               [-0.18, 0.49, 1, 0.49, 0],
-                               [0, 0.17, 0.49, 0.17, 0],
-                               [0, 0, 0, 0, 0]], requires_grad=False).cuda()
-        center = center.repeat(out_channels, in_channels//groups, 1, 1)
-
-        surround = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
-                               [-0.23, 0, 0, 0, -0.23],
-                               [-0.18, 0, 0, 0, -0.18],
-                               [-0.23, 0, 0, 0, -0.23],
-                               [-0.27, -0.23, -0.18, -0.23, 0.27]], requires_grad=False).cuda()
-        surround = surround.repeat(out_channels, in_channels // groups, 1, 1)
-
-        return center, surround
-
     def get_weight_5x5(self, param):
         """
         5x5 surround modulation
         center: relu(x) + relu(-x)
         surround: - relu(x) - relu(-x)
         """
-        center = F.pad(param[:, :, 1:4, 1:4], (1, 1, 1, 1))
-        surround = param - center
-        surround = surround * 9/16
-        center = F.relu(center) + F.relu(-center)
-        surround = - F.relu(surround) - F.relu(-surround)
-        center = torch.max(center, self.center_threshold)
-        surround = torch.min(surround, self.surround_threshold)
-
-        weight = center + surround
+        a, b = param[:, :, 0], param[:, :, 1]
+        # a - b
+        x = a * torch.exp(-a * a) - b * torch.exp(-b * b)
+        y = a * torch.exp(-2 * a * a) - b * torch.exp(-2 * b * b)
+        z = a * torch.exp(-4 * a * a) - b * torch.exp(-4 * b * b)
+        u = a * torch.exp(-5 * a * a) - b * torch.exp(-5 * b * b)
+        v = a * torch.exp(-8 * a * a) - b * torch.exp(-8 * b * b)
+        # weight = torch.cat([v, u, z, u, v], dim=)
+        weight = torch.tensor([[v, u, z, u, v], [u, y, x, y, u], [z, x, a-b, x, z], [u, y, x, y, u], [v, u, z, u, v]])
 
         return weight
 

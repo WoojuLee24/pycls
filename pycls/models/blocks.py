@@ -166,7 +166,8 @@ def init_weights(m):
     """Performs ResNet-style weight initialization."""
     if isinstance(m, EndstoppingDilation) or isinstance(m, EndstoppingDivide3x3) or isinstance(m, EndstoppingDivide5x5) \
             or isinstance(m, EndstoppingDilationPReLU)\
-            or isinstance(m, ComparingDilation) :
+            or isinstance(m, ComparingDilation)\
+            or isinstance(m, EndstoppingDoG5x5):
         pass
     elif isinstance(m, nn.Conv2d):
         # Note that there is no bias due to BN

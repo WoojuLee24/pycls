@@ -90,6 +90,31 @@ class ResStemCifarDivide5x5ConvDcEntire(Module):
         return cx
 
 
+class ResStemCifarDoG5x5ConvDcEntire(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarDoG5x5ConvDcEntire, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.e = EndstoppingDoG5x5(w_out, w_out, 5, stride=1, groups=w_out)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.e(x)
+        x = self.af(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
 class ResStemCifarDivide5x5GroupEntire(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
 
@@ -183,6 +208,30 @@ class ResStemCifarCompareFixedSmConvDcEntire(Module):
         x = self.af(x)
         x = self.e(x)
         x = self.af(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResStemCifarCompareFixedSmConvDcEntireNoaf(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarCompareFixedSmConvDcEntireNoaf, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.e = CompareFixedSM(w_out, w_out, 5, stride=1, groups=w_out)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.e(x)
         return x
 
     @staticmethod
