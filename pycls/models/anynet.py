@@ -22,6 +22,7 @@ def get_stem_fun(stem_type):
         "res_stem_cifar_sigmoid_5x5_conv_dc_entire": ResStemCifarSigmoid5x5ConvDcEntire,
         "res_stem_cifar_slope_5x5_conv_dc_entire": ResStemCifarSlope5x5ConvDcEntire,
         "res_stem_cifar_slope_tanh_5x5_conv_dc_entire": ResStemCifarSlopeTanh5x5ConvDcEntire,
+        "res_stem_cifar_slope_tanh2_5x5_conv_dc_entire": ResStemCifarSlopeTanh25x5ConvDcEntire,
         "res_stem_cifar_dog_5x5_conv_dc_entire": ResStemCifarDoG5x5ConvDcEntire,
         "res_stem_cifar_divide_5x5_group_entire": ResStemCifarDivide5x5GroupEntire,
         "res_stem_cifar_divide_5x5_conv_only_dc_entire": ResStemCifarDivide5x5ConvOnlyDcEntire,
