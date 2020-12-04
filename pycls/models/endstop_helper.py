@@ -111,8 +111,8 @@ class EndstoppingDivide5x5(nn.Conv2d):
         center = F.pad(param[:, :, 1:4, 1:4], (1, 1, 1, 1))
         surround = param - center
         surround = surround * 9/16
-        center = F.relu(center) + F.relu(-center) + 1e-4
-        surround = - F.relu(surround) - F.relu(-surround) - 1e-4
+        center = F.relu(center) + F.relu(-center) + 1e-3
+        surround = - F.relu(surround) - F.relu(-surround) - 1e-3
         # center = torch.max(center, self.center_threshold)
         # surround = torch.min(surround, self.surround_threshold)
 
