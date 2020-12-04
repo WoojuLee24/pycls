@@ -457,3 +457,60 @@ class EndstoppingSlope(nn.Conv2d):
         x = self.replication_pad(x)
         x = F.conv2d(x, weight, stride=1, groups=self.groups)
         return x
+
+
+class EndstoppingSigmoid(nn.Conv2d):
+
+    """
+    End-stopping Divide kernel for solving aperture problem
+    Using relu function to learn center-surround suppression
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.replication_pad = nn.ReplicationPad2d(2)
+        self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.sm = self.get_sm(self.in_channels, self.out_channels, groups, range=0.25)
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
+        param = param.cuda()
+        nn.init.xavier_normal_(param, gain=nn.init.calculate_gain('sigmoid'))
+        return nn.Parameter(param)
+
+    def get_sm(self, in_channels, out_channels, groups, range):
+        sm = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
+                      [-0.23, 0.17, 0.49, 0.17, -0.23],
+                      [-0.18, 0.49, 1, 0.49, -0.18],
+                      [-0.23, 0.17, 0.49, 0.17, -0.23],
+                      [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        sm = sm - range
+        sm = sm.repeat((out_channels, in_channels // groups, 1, 1))
+        return sm
+
+    def get_weight_5x5(self, param):
+        """
+        5x5 surround modulation
+        center: relu(x) + relu(-x)
+        surround: - relu(x) - relu(-x)
+        """
+        weight = self.sm + 1 / 2 * torch.sigmoid(param)
+        return weight
+
+
+    def get_center(self, param):
+        center = F.relu(param) + F.relu(-param)
+        return center
+
+    def forward(self, x):
+        weight = self.get_weight_5x5(self.param)
+        x = self.replication_pad(x)
+        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
+        return x
