@@ -491,18 +491,19 @@ class EndstoppingSlopeTanh(nn.Conv2d):
 
     def get_weight(self, slope_x, slope_y, center):
         one = torch.ones([self.out_channels, self.in_channels // self.groups, 1, 1], dtype=torch.float).cuda()
-        bias = 1 / 4 * (torch.tanh(center) + 3 * one)
-        kernel_x = torch.cat([bias - 2 * 1 / 4 * (torch.tanh(slope_x) + 3 * one),
+        # bias = 1 / 4 * (torch.tanh(center) + 3 * one)
+        bias = one
+        kernel_x = torch.cat([bias - 2 * 1 / 4 * (torch.tanh(slope_x) + 2 * one),
                               bias - 1 / 4 * (torch.tanh(slope_x) + 3 * one),
                               bias,
-                              bias - 1 / 4 * (torch.tanh(slope_x) + 3 * one),
-                              bias - 2 * 1 / 4 * (torch.tanh(slope_x) + 3 * one)], dim=2)
+                              bias - 1 / 4 * (torch.tanh(slope_x) + 2 * one),
+                              bias - 2 * 1 / 4 * (torch.tanh(slope_x) + 2 * one)], dim=2)
         kernel_x = kernel_x.repeat((1, 1, 1, 5))
-        kernel_y = torch.cat([bias - 2 * 1 / 4 * (torch.tanh(slope_y) + 3 * one),
-                              bias - 1 / 4 * (torch.tanh(slope_y) + 3 * one),
+        kernel_y = torch.cat([bias - 2 * 1 / 4 * (torch.tanh(slope_y) + 2 * one),
+                              bias - 1 / 4 * (torch.tanh(slope_y) + 2 * one),
                               bias,
-                              bias - 1 / 4 * (torch.tanh(slope_y) + 3 * one),
-                              bias - 2 * 1 / 4 * (torch.tanh(slope_y) + 3 * one)], dim=3)
+                              bias - 1 / 4 * (torch.tanh(slope_y) + 2 * one),
+                              bias - 2 * 1 / 4 * (torch.tanh(slope_y) + 2 * one)], dim=3)
         kernel_y = kernel_y.repeat((1, 1, 5, 1))
         kernel = kernel_x + kernel_y
         return kernel
