@@ -73,7 +73,8 @@ class EndstoppingDivide5x5(nn.Conv2d):
         self.padding = padding
         self.replication_pad = nn.ReplicationPad2d(2)
         self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
-        self.center_threshold, self.surround_threshold = self.get_threshold_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.sm = self.get_sm(self.in_channels, self.out_channels, self.groups, mul=1e-3)
+        # self.center_threshold, self.surround_threshold = self.get_threshold_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
 
     def get_param(self, in_channels, out_channels, kernel_size, groups):
         param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
@@ -83,6 +84,15 @@ class EndstoppingDivide5x5(nn.Conv2d):
         # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
         return nn.Parameter(param)
 
+    def get_sm(self, in_channels, out_channels, groups, mul=1e-3):
+        sm = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
+                      [-0.23, 0.17, 0.49, 0.17, -0.23],
+                      [-0.18, 0.49, 1, 0.49, -0.18],
+                      [-0.23, 0.17, 0.49, 0.17, -0.23],
+                      [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        sm = sm * mul
+        sm = sm.repeat((out_channels, in_channels // groups, 1, 1))
+        return sm
 
     def get_threshold_param(self, in_channels, out_channels, kernel_size, groups):
 
@@ -111,12 +121,13 @@ class EndstoppingDivide5x5(nn.Conv2d):
         center = F.pad(param[:, :, 1:4, 1:4], (1, 1, 1, 1))
         surround = param - center
         surround = surround * 9/16
-        center = F.relu(center) + F.relu(-center) + 1e-3
-        surround = - F.relu(surround) - F.relu(-surround) - 1e-3
+        center = F.relu(center) + F.relu(-center)
+        surround = - F.relu(surround) - F.relu(-surround)
         # center = torch.max(center, self.center_threshold)
         # surround = torch.min(surround, self.surround_threshold)
 
         weight = center + surround
+        weight = weight + self.sm
 
         return weight
 
