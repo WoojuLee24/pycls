@@ -423,31 +423,32 @@ class EndstoppingSlope(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
-        self.slope_x = self.get_param(self.in_channels, self.out_channels, self.groups)
-        self.slope_y = self.get_param(self.in_channels, self.out_channels, self.groups)
+        self.slope_x = self.get_param(self.in_channels, self.out_channels, self.groups, mean=-1.35)
+        self.slope_y = self.get_param(self.in_channels, self.out_channels, self.groups, mean=-1.35)
         self.center = self.get_param(self.in_channels, self.out_channels, self.groups)
         self.replication_pad = nn.ReplicationPad2d(2)
 
-    def get_param(self, in_channels, out_channels, groups):
+    def get_param(self, in_channels, out_channels, groups, mean=0.0):
         param = torch.zeros([out_channels, in_channels//groups, 1, 1], dtype=torch.float, requires_grad=True)
         param = param.cuda()
         nn.init.xavier_normal_(param, gain=nn.init.calculate_gain('sigmoid'))
+        param = param - mean
         return nn.Parameter(param)
 
     def get_weight(self, slope_x, slope_y, center):
         one = torch.ones([self.out_channels, self.in_channels // self.groups, 1, 1], dtype=torch.float).cuda()
-        bias = 1 / 2 * (torch.sigmoid(center) + one)
-        kernel_x = torch.cat([bias - 2 * 1 / 2 * (torch.sigmoid(slope_x) + one),
-                              bias - 1 / 2 * (torch.sigmoid(slope_x) + one),
+        bias = torch.sigmoid(center) + one / 2
+        kernel_x = torch.cat([bias - 2 * 1 / 2 * (torch.sigmoid(slope_x) + one / 2),
+                              bias - 1 / 2 * (torch.sigmoid(slope_x) + one / 2),
                               bias,
-                              bias - 1 / 2 * (torch.sigmoid(slope_x) + one),
-                              bias - 2 * 1 / 2 * (torch.sigmoid(slope_x) + one)], dim=2)
+                              bias - 1 / 2 * (torch.sigmoid(slope_x) + one / 2),
+                              bias - 2 * 1 / 2 * (torch.sigmoid(slope_x) + one / 2)], dim=2)
         kernel_x = kernel_x.repeat((1, 1, 1, 5))
-        kernel_y = torch.cat([bias - 2 * 1 / 2 * (torch.sigmoid(slope_y) + one),
-                              bias - 1 / 2 * (torch.sigmoid(slope_y) + one),
+        kernel_y = torch.cat([bias - 2 * 1 / 2 * (torch.sigmoid(slope_y) + one / 2),
+                              bias - 1 / 2 * (torch.sigmoid(slope_y) + one / 2),
                               bias,
-                              bias - 1 / 2 * (torch.sigmoid(slope_y) + one),
-                              bias - 2 * 1 / 2 * (torch.sigmoid(slope_y) + one)], dim=3)
+                              bias - 1 / 2 * (torch.sigmoid(slope_y) + one / 2),
+                              bias - 2 * 1 / 2 * (torch.sigmoid(slope_y) + one / 2)], dim=3)
         kernel_y = kernel_y.repeat((1, 1, 5, 1))
         kernel = kernel_x + kernel_y
         return kernel
@@ -475,15 +476,16 @@ class EndstoppingSlopeTanh(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
-        self.slope_x = self.get_param(self.in_channels, self.out_channels, self.groups)
-        self.slope_y = self.get_param(self.in_channels, self.out_channels, self.groups)
+        self.slope_x = self.get_param(self.in_channels, self.out_channels, self.groups, mean=-0.675)
+        self.slope_y = self.get_param(self.in_channels, self.out_channels, self.groups, mean=-0.675)
         self.center = self.get_param(self.in_channels, self.out_channels, self.groups)
         self.replication_pad = nn.ReplicationPad2d(2)
 
-    def get_param(self, in_channels, out_channels, groups):
+    def get_param(self, in_channels, out_channels, groups, mean=0):
         param = torch.zeros([out_channels, in_channels//groups, 1, 1], dtype=torch.float, requires_grad=True)
         param = param.cuda()
-        nn.init.xavier_normal_(param, gain=nn.init.calculate_gain('sigmoid'))
+        nn.init.xavier_normal_(param, gain=nn.init.calculate_gain('tanh'))
+        param = param - mean
         return nn.Parameter(param)
 
     def get_weight(self, slope_x, slope_y, center):
@@ -500,6 +502,64 @@ class EndstoppingSlopeTanh(nn.Conv2d):
                               bias,
                               bias - 1 / 4 * (torch.tanh(slope_y) + 3 * one),
                               bias - 2 * 1 / 4 * (torch.tanh(slope_y) + 3 * one)], dim=3)
+        kernel_y = kernel_y.repeat((1, 1, 5, 1))
+        kernel = kernel_x + kernel_y
+        return kernel
+
+    def forward(self, x):
+        weight = self.get_weight(self.slope_x, self.slope_y, self.center)
+        x = self.replication_pad(x)
+        x = F.conv2d(x, weight, stride=1, groups=self.groups)
+        return x
+
+
+class EndstoppingSlopeRelu(nn.Conv2d):
+
+    """
+    End-stopping kernel for solving aperture problem
+    Learnable parameter
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+        super().__init__(in_channels, out_channels, kernel_size, stride=1, padding=padding, dilation=dilation, bias=bias)
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.slope_x = self.get_param(self.in_channels, self.out_channels, self.groups, mean=0.35)
+        self.slope_y = self.get_param(self.in_channels, self.out_channels, self.groups, mean=0.35)
+        self.center = self.get_param(self.in_channels, self.out_channels, self.groups, mean=1)
+        self.replication_pad = nn.ReplicationPad2d(2)
+
+    def get_param(self, in_channels, out_channels, groups, mean=0.0):
+        param = torch.zeros([out_channels, in_channels//groups, 1, 1], dtype=torch.float, requires_grad=True)
+        param = param.cuda()
+        fan_out = 1 * 1 * out_channels
+        param.data.normal_(mean=mean, std=np.sqrt(2.0 / fan_out))
+        return nn.Parameter(param)
+
+    def get_constraint(self, param, min=0.5, max=1):
+        return torch.clamp(F.relu(param), min=min, max=max)
+
+    def get_weight(self, slope_x, slope_y, center):
+        slope_x = self.get_constraint(slope_x)
+        slope_y = self.get_constraint(slope_y)
+        bias = self.get_constraint(center)
+
+        kernel_x = torch.cat([bias - 2 * slope_x,
+                              bias - 1 * slope_x,
+                              bias,
+                              bias - 1 * slope_x,
+                              bias - 2 * slope_x], dim=2)
+        kernel_x = kernel_x.repeat((1, 1, 1, 5))
+        kernel_y = torch.cat([- 2 * slope_y,
+                              - 1 * slope_y,
+                              0,
+                              - 1 * slope_y,
+                              - 2 * slope_y], dim=3)
         kernel_y = kernel_y.repeat((1, 1, 5, 1))
         kernel = kernel_x + kernel_y
         return kernel
@@ -535,7 +595,7 @@ class EndstoppingSlopeTanh2(nn.Conv2d):
     def get_param(self, in_channels, out_channels, groups):
         param = torch.zeros([out_channels, in_channels//groups, 1, 1], dtype=torch.float, requires_grad=True)
         param = param.cuda()
-        nn.init.xavier_normal_(param, gain=nn.init.calculate_gain('sigmoid'))
+        nn.init.xavier_normal_(param, gain=nn.init.calculate_gain('tanh'))
         return nn.Parameter(param)
 
     def get_weight(self, slope_x, slope_y, center):
