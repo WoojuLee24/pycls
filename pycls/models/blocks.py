@@ -169,7 +169,8 @@ def init_weights(m):
             or isinstance(m, ComparingDilation)\
             or isinstance(m, EndstoppingDoG5x5) \
             or isinstance(m, EndstoppingSigmoid) \
-            or isinstance(m, EndstoppingSlope):
+            or isinstance(m, EndstoppingSlope) \
+            or isinstance(m, EndstoppingSlopeTanh):
         pass
     elif isinstance(m, nn.Conv2d):
         # Note that there is no bias due to BN
