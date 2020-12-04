@@ -437,7 +437,8 @@ class EndstoppingSlope(nn.Conv2d):
 
     def get_weight(self, slope_x, slope_y, center):
         one = torch.ones([self.out_channels, self.in_channels // self.groups, 1, 1], dtype=torch.float).cuda()
-        bias = torch.sigmoid(center) + one / 2
+        # bias = torch.sigmoid(center) + one / 2
+        bias = one
         kernel_x = torch.cat([bias - 2 * 1 / 2 * (torch.sigmoid(slope_x) + one / 2),
                               bias - 1 / 2 * (torch.sigmoid(slope_x) + one / 2),
                               bias,
