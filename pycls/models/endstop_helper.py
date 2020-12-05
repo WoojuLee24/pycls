@@ -446,6 +446,7 @@ class CompareFixedSM(nn.Conv2d):
                                [-0.18, 0.49, 1, 0.49, -0.18],
                                [-0.23, 0.17, 0.49, 0.17, -0.23],
                                [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        kernel = kernel * 0.0293227
         kernel = kernel.repeat(out_channels, in_channels//groups, 1, 1)
 
         return kernel
