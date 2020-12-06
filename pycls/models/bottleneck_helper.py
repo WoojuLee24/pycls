@@ -108,8 +108,9 @@ class BasicTransformNoBn(Module):
         self.b = conv2d(w_out, w_out, 3)
 
     def forward(self, x):
-        for layer in self.children():
-            x = layer(x)
+        x = self.a(x)
+        x = self.a_af(x)
+        x = self.b(x)
         return x
 
     @staticmethod
