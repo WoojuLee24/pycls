@@ -103,8 +103,8 @@ class BasicSurroundTransform(Module):
 
     def __init__(self, w_in, w_out, stride, _params):
         super(BasicSurroundTransform, self).__init__()
-        # self.a = conv2d(w_in, w_out, 3, stride=stride)
-        self.a = SurroundDivide(w_in, w_out, 3, stride=stride, groups=1)
+        self.a = conv2d(w_in, w_out, 3, stride=stride)
+        # self.a = SurroundDivide(w_in, w_out, 3, stride=stride, groups=1)
         self.a_bn = norm2d(w_out)
         self.a_af = activation()
         # self.b = conv2d(w_out, w_out, 3)
