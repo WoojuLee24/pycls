@@ -98,6 +98,52 @@ class ResBasicBlock(Module):
         return cx
 
 
+class BasicTransformNoBn(Module):
+    """Basic transformation: [3x3 conv, BN, Relu] x2."""
+
+    def __init__(self, w_in, w_out, stride, _params):
+        super(BasicTransformNoBn, self).__init__()
+        self.a = conv2d(w_in, w_out, 3, stride=stride)
+        self.a_af = activation()
+        self.b = conv2d(w_out, w_out, 3)
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, _params):
+        cx = conv2d_cx(cx, w_in, w_out, 3, stride=stride)
+        cx = conv2d_cx(cx, w_out, w_out, 3)
+        return cx
+
+
+class ResBasicBlockNoBn(Module):
+    """Residual basic block: x + f(x), f = basic transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(ResBasicBlockNoBn, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+        self.f = BasicTransformNoBn(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.proj(x) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx["h"], cx["w"] = h, w
+        cx = BasicTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
 class BasicSurroundTransform(Module):
     """Basic transformation: [3x3 conv, BN, Relu] x2."""
 

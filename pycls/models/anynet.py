@@ -17,6 +17,7 @@ def get_stem_fun(stem_type):
     """Retrieves the stem function by name."""
     stem_funs = {
         "res_stem_cifar": ResStemCifar,
+        "res_stem_cifar_no_bn": ResStemCifarNoBn,
         "res_stem_cifar_surround_divide_conv_dc_entire": ResStemCifarSurroundDivideConvDcEntire,
         "res_stem_cifar_surround_divide_conv_fc_entire": ResStemCifarSurroundDivideConvFcEntire,
         "res_stem_cifar_divide_3x3_conv_dc_entire": ResStemCifarDivide3x3ConvDcEntire,
@@ -70,6 +71,7 @@ def get_block_fun(block_type):
     block_funs = {
         "vanilla_block": VanillaBlock,
         "res_basic_block": ResBasicBlock,
+        "res_basic_block_no_bn": ResBasicBlockNoBn,
         "res_basic_surround_block": ResBasicSurroundBlock,
         "res_bottleneck_block": ResBottleneckBlock,
         "res_bottleneck_block_end_proj": ResBottleneckBlockEndProj,

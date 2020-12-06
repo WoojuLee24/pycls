@@ -40,6 +40,25 @@ class ResStemCifar(Module):
         return cx
 
 
+class ResStemCifarNoBn(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarNoBn, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.af = activation()
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        return cx
+
+
 class ResStemCifarSurroundDivideConvDcEntire(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
 
