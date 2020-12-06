@@ -117,7 +117,7 @@ class BasicSurroundTransform(Module):
         x = self.a_bn(x)
         x = self.a_af(x)
         x = self.b(x)
-        x = self.b_bn(x)
+        # x = self.b_bn(x)
         return x
 
     @staticmethod
