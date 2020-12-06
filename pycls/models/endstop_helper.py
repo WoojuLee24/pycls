@@ -58,7 +58,8 @@ class EndstoppingDivide3x3(nn.Conv2d):
 class EndstoppingDivide5x5(nn.Conv2d):
 
     """
-    End-stopping Divide kernel for solving aperture problem
+    End-stopping
+     xkzldhkernel for solving aperture problem
     Using relu function to learn center-surround suppression
     """
 
@@ -151,7 +152,7 @@ class SurroundDivide(nn.Conv2d):
     Using relu function to learn center-surround suppression
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=2, dilation=1, bias=False, groups=1):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
 
         self.in_channels = in_channels
@@ -160,7 +161,7 @@ class SurroundDivide(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
-        self.replication_pad = nn.ReplicationPad2d(2)
+        self.replication_pad = nn.ReplicationPad2d(self.padding)
         self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
         # self.sm = self.get_sm(self.in_channels, self.out_channels, self.groups, mul=1e-3)
         # self.center_threshold, self.surround_threshold = self.get_threshold_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
@@ -190,18 +191,13 @@ class SurroundDivide(nn.Conv2d):
         center: relu(x) + relu(-x)
         surround: - relu(x) - relu(-x)
         """
-        center = F.relu(param) + F.relu(-param)
-        center_sum = center.sum(dim=3).sum(dim=2)
-        center_mean = center_sum / 16
-        sur = -center_mean
-        sur2 = torch.stack([sur, sur, sur], dim=2)
-        sur2 = torch.stack([sur2, sur2, sur2], dim=3)
-        sur2 = F.pad(sur2, (1, 1, 1, 1))
-        sur = torch.stack([sur, sur, sur, sur, sur], dim=2)
-        surround = torch.stack([sur, sur, sur, sur, sur], dim=3)
-        surround = surround - sur2
-        center = F.pad(center, (1, 1, 1, 1))
-        weight = center + surround
+        # center = F.relu(param) + F.relu(-param)
+        center = param
+        center_mean = center.sum(dim=3).sum(dim=2) / 16
+        surround = -center_mean
+        sur_w = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 1, 3))
+        sur_h = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 5, 1))
+        weight = torch.cat([sur_h, torch.cat([sur_w, center, sur_w], dim=2), sur_h], dim=3)
 
         return weight
 
@@ -216,6 +212,7 @@ class SurroundDivide(nn.Conv2d):
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         # x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)
         return x
+
 
 
 class EndstoppingDoG5x5(nn.Conv2d):
