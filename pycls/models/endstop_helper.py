@@ -82,7 +82,7 @@ class EndstoppingDivide5x5(nn.Conv2d):
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         # param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
-        param.data.normal_(mean=0.0, std=np.sqrt(6.0 / fan_out))
+        param.data.uniform_(-np.sqrt(6.0 / fan_out), np.sqrt(6.0 / fan_out))
         # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
         return nn.Parameter(param)
 
