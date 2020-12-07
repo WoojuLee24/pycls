@@ -117,11 +117,12 @@ class EndstoppingDivide5x5(nn.Conv2d):
 
 
     def standardize_weight(self, weight):
-        weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2,
-                                                            keepdim=True).mean(dim=3, keepdim=True)
-        weight = weight - weight_mean
-        std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
-        weight = weight / std.expand_as(weight)
+        with torch.no_grad():
+            weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2,
+                                                                keepdim=True).mean(dim=3, keepdim=True)
+            weight = weight - weight_mean
+            std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
+            weight = weight / std.expand_as(weight)
 
         return weight
 
@@ -149,8 +150,11 @@ class EndstoppingDivide5x5(nn.Conv2d):
         return center
 
     def forward(self, x):
-        weight = self.get_weight_5x5(self.param)
-        weight = self.standardize_weight(weight)
+        # weight = self.get_weight_5x5(self.param)
+        # weight = self.standardize_weight(weight)
+        weight = self.standardize_weight(self.param)
+        weight = self.get_weight_5x5(weight)
+
         x = self.replication_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         # x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)
