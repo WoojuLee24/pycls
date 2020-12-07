@@ -126,7 +126,7 @@ class EndstoppingDivide5x5(nn.Conv2d):
 
         return weight
 
-    def get_weight_5x5(self, param):
+    def get_weight_5x5(self, param, decay_factor=9/16):
         """
         5x5 surround modulation
         center: relu(x) + relu(-x)
@@ -134,7 +134,7 @@ class EndstoppingDivide5x5(nn.Conv2d):
         """
         center = F.pad(param[:, :, 1:4, 1:4], (1, 1, 1, 1))
         surround = param - center
-        surround = surround * 9/16
+        surround = surround * decay_factor
         center = F.relu(center) + F.relu(-center)
         surround = - F.relu(surround) - F.relu(-surround)
         # center = torch.max(center, self.center_threshold)
@@ -150,8 +150,8 @@ class EndstoppingDivide5x5(nn.Conv2d):
         return center
 
     def forward(self, x):
-        weight = self.get_weight_5x5(self.param)
-        weight = self.standardize_weight(weight)
+        weight = self.get_weight_5x5(self.param, decay_factor=1)
+        # weight = self.standardize_weight(weight)
         x = self.replication_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         # x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)
