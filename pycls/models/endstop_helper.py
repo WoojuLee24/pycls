@@ -150,7 +150,7 @@ class EndstoppingDivide5x5(nn.Conv2d):
         return center
 
     def forward(self, x):
-        weight = self.get_weight_5x5(self.param, decay_factor=1)
+        weight = self.get_weight_5x5(self.param, decay_factor=9/16)
         # weight = self.standardize_weight(weight)
         x = self.replication_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
