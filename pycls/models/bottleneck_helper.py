@@ -110,7 +110,7 @@ class BasicTransformNoBn(Module):
 
     def forward(self, x):
         x = self.a(x)
-        x = self.a_bn(x0)
+        x = self.a_bn(x)
         x = self.a_af(x)
         x = self.b(x)
         return x
