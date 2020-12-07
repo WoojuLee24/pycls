@@ -2,7 +2,7 @@ MODEL:
   TYPE: anynet
   NUM_CLASSES: 10
 ANYNET:
-  STEM_TYPE: res_stem_cifar_surround_divide_conv_fc_entire
+  STEM_TYPE: res_stem_cifar_surround_divide_conv_fcx2_entire
   STEM_W: 16
   BLOCK_TYPE: res_basic_block
   DEPTHS: [3, 3, 3]

@@ -88,7 +88,7 @@ class ResStemCifarSurroundDivideConvFcEntire(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
 
     def __init__(self, w_in, w_out):
-        super(ResStemCifarSurroundDivideConvDcEntire, self).__init__()
+        super(ResStemCifarSurroundDivideConvFcEntire, self).__init__()
         self.conv = conv2d(w_in, w_out, 3)
         self.bn = norm2d(w_out)
         self.e = SurroundDivide(w_out, w_out, 3, stride=1, groups=1)
@@ -99,6 +99,29 @@ class ResStemCifarSurroundDivideConvFcEntire(Module):
         x = self.bn(x)
         x = self.af(x)
         x = self.e(x)
+        x = self.af(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResStemCifarSurroundDivideConvFcx2Entire(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarSurroundDivideConvFcx2Entire, self).__init__()
+        self.e1 = SurroundDivide(w_in, w_out, 3, stride=1, groups=1)
+        self.e2 = SurroundDivide(w_out, w_out, 3, stride=1, groups=1)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.e1(x)
+        x = self.af(x)
+        x = self.e2(x)
         x = self.af(x)
         return x
 
