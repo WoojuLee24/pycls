@@ -277,14 +277,13 @@ class SurroundDivide(nn.Conv2d):
         sm = sm * mul
         sm = sm.repeat((out_channels, in_channels // groups, 1, 1))
         return sm
-    
+
     def standardize_weight(self, weight):
-        with torch.no_grad():
-            weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2,
-                                                                keepdim=True).mean(dim=3, keepdim=True)
-            weight = weight - weight_mean
-            std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
-            weight = weight / std.expand_as(weight)
+
+        weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
+        weight = weight - weight_mean
+        std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
+        weight = weight / std.expand_as(weight)
 
         return weight
 
