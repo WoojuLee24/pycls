@@ -198,12 +198,12 @@ class CenterSurround(nn.Conv2d):
         center2 = F.relu(center2) + F.relu(-center2)
         surround = - F.relu(surround) - F.relu(-surround)
         surround = surround * decay_factor
-        center_pad = F.pad(center, (2, 2, 2, 2))
-        center2_pad = F.pad(center2.repeat(1, 1, 3, 3), (1, 1, 1, 1))
+        center_pad = F.pad(center, (1, 1, 1, 1))
+        center2_pad = center2.repeat(1, 1, 3, 3)
         center = center_pad + center2_pad
-        surround = surround.repeat((1, 1, 5, 5))
-        weight = center + surround
-
+        sur_w = surround.repeat((1, 1, 1, 3))
+        sur_h = surround.repeat((1, 1, 5, 1))
+        weight = torch.cat([sur_h, torch.cat([sur_w, center, sur_w], dim=2), sur_h], dim=3)
         return weight
 
     def forward(self, x):
