@@ -172,6 +172,7 @@ def init_weights(m):
             or isinstance(m, EndstoppingSlope) \
             or isinstance(m, EndstoppingSlopeTanh) \
             or isinstance(m, SurroundDivide) \
+            or isinstance(m, CenterSurround) \
             or isinstance(m, EndstoppingSlopeTanh2):
         pass
     elif isinstance(m, nn.Conv2d):

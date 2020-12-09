@@ -18,6 +18,7 @@ def get_stem_fun(stem_type):
     stem_funs = {
         "res_stem_cifar": ResStemCifar,
         "res_stem_cifar_no_bn": ResStemCifarNoBn,
+        "res_stem_cifar_center_surround_conv_dc_entire": ResStemCifarCenterSurroundConvDcEntire,
         "res_stem_cifar_surround_divide_conv_dc_entire": ResStemCifarSurroundDivideConvDcEntire,
         "res_stem_cifar_surround_divide_conv_fc_entire": ResStemCifarSurroundDivideConvFcEntire,
         "res_stem_cifar_surround_divide_conv_fcx2_entire": ResStemCifarSurroundDivideConvFcx2Entire,

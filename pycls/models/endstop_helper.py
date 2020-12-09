@@ -81,9 +81,10 @@ class EndstoppingDivide5x5(nn.Conv2d):
     def get_param(self, in_channels, out_channels, kernel_size, groups):
         param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
         param = param.cuda()
+        # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
         fan_out = kernel_size * kernel_size * out_channels
-        # param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
-        param.data.uniform_(-np.sqrt(6.0 / fan_out), np.sqrt(6.0 / fan_out))
+        param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
+        # param.data.uniform_(-np.sqrt(6.0 / fan_out), np.sqrt(6.0 / fan_out))
         # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
         return nn.Parameter(param)
 
@@ -140,7 +141,6 @@ class EndstoppingDivide5x5(nn.Conv2d):
         surround = surround * decay_factor
         # center = torch.max(center, self.center_threshold)
         # surround = torch.min(surround, self.surround_threshold)
-
         weight = center + surround
 
         return weight
@@ -156,6 +156,108 @@ class EndstoppingDivide5x5(nn.Conv2d):
         x = self.replication_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         # x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)
+        return x
+
+
+class CenterSurround(nn.Conv2d):
+
+    """
+    End-stopping Divide kernel for solving aperture problem
+    Using relu function to learn center-surround suppression
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=2, dilation=1, bias=False, groups=1):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.replication_pad = nn.ReplicationPad2d(self.padding)
+        self.center = self.get_param(self.in_channels, self.out_channels, 1, groups)
+        self.center2 = self.get_param(self.in_channels, self.out_channels, 1, groups)
+        self.surround = self.get_param(self.in_channels, self.out_channels, 1, groups)
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
+        param = param.cuda()
+        fan_out = kernel_size * kernel_size * out_channels
+        param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
+        # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
+        return nn.Parameter(param)
+
+    def get_weight_5x5(self, center, center2, surround, decay_factor=10/16):
+        """
+        5x5 surround modulation
+        center: relu(x) + relu(-x)
+        surround: - relu(x) - relu(-x)
+        """
+        center = F.relu(center) + F.relu(-center)
+        center2 = F.relu(center2) + F.relu(-center2)
+        surround = - F.relu(surround) - F.relu(-surround)
+        surround = surround * decay_factor
+        center_pad = F.pad(center, (2, 2, 2, 2))
+        center2_pad = F.pad(center2.repeat(1, 1, 3, 3), (1, 1, 1, 1))
+        center = center_pad + center2_pad
+        surround = surround.repeat((1, 1, 5, 5))
+        weight = center + surround
+
+        return weight
+
+    def forward(self, x):
+        weight = self.get_weight_5x5(self.center, self.center2, self.surround)
+        x = self.replication_pad(x)
+        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
+
+        return x
+
+
+class SurroundAvg(nn.Conv2d):
+
+    """
+    End-stopping Divide kernel for solving aperture problem
+    Using relu function to learn center-surround suppression
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=2, dilation=1, bias=False, groups=1):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.param3 = self.get_param3(self.in_channels, self.out_channels, groups)
+        self.param5 = self.get_param5(self.in_channels, self.out_channels,groups)
+
+    def get_param5(self, in_channels, out_channels, groups):
+
+        kernel = torch.tensor([[0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04]], requires_grad=False).cuda()
+        kernel = kernel.repeat((out_channels, in_channels//groups, 1, 1))
+
+        return kernel
+
+    def get_param3(self, in_channels, out_channels, groups):
+        kernel = torch.tensor([[1/9, 1/9, 1/9],
+                               [1/9, 1/9, 1/9],
+                               [1/9, 1/9, 1/9]], requires_grad=False).cuda()
+        kernel = kernel.repeat((out_channels, in_channels // groups, 1, 1))
+
+        return kernel
+
+    def forward(self, x):
+
+        x5 = F.conv2d(x, self.param5, padding=2, stride=self.stride, groups=self.groups)
+        x3 = F.conv2d(x, self.param3, padding=1, stride=self.stride, groups=self.groups)
+        x = x3-x5
+
         return x
 
 
