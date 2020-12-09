@@ -216,90 +216,20 @@ class SurroundDivide(nn.Conv2d):
         surround: - relu(x) - relu(-x)
         """
         # center = F.relu(param) + F.relu(-param)
-        center = F.relu(param) + F.relu(-param)
-        center_mean = center.sum(dim=3).sum(dim=2) / 16
-        surround = -center_mean
-        sur_w = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 1, 3))
-        sur_h = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 5, 1))
-        weight = torch.cat([sur_h, torch.cat([sur_w, center, sur_w], dim=2), sur_h], dim=3)
 
-        return weight
-
-
-    def get_center(self, param):
-        center = F.relu(param) + F.relu(-param)
-        return center
-
-    def forward(self, x):
-        weight = self.get_weight_5x5(self.param)
-        weight = self.standardize_weight(weight)
-        x = self.replication_pad(x)
-        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
-        # x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)
-        return x
-
-
-class SurroundDivide(nn.Conv2d):
-
-    """
-    End-stopping Divide kernel for solving aperture problem
-    Using relu function to learn center-surround suppression
-    """
-
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=2, dilation=1, bias=False, groups=1):
-        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
-
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.groups = groups
-        self.padding = padding
-        self.replication_pad = nn.ReplicationPad2d(self.padding)
-        self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
-        # self.sm = self.get_sm(self.in_channels, self.out_channels, self.groups, mul=1e-3)
-        # self.center_threshold, self.surround_threshold = self.get_threshold_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
-
-    def get_param(self, in_channels, out_channels, kernel_size, groups):
-        param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
-        param = param.cuda()
-        fan_out = kernel_size * kernel_size * out_channels
-        param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
-        # param.data.normal_(mean=0.0, std=np.sqrt(6.0 / fan_out))
-        # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
-        return nn.Parameter(param)
-
-    def get_sm(self, in_channels, out_channels, groups, mul=1e-3):
-        sm = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
-                      [-0.23, 0.17, 0.49, 0.17, -0.23],
-                      [-0.18, 0.49, 1, 0.49, -0.18],
-                      [-0.23, 0.17, 0.49, 0.17, -0.23],
-                      [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
-        sm = sm * mul
-        sm = sm.repeat((out_channels, in_channels // groups, 1, 1))
-        return sm
-
-    def standardize_weight(self, weight):
-
-        weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
-        weight = weight - weight_mean
-        std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
-        weight = weight / std.expand_as(weight)
-
-        return weight
-
-    def get_weight_5x5(self, param):
-        """
-        5x5 surround modulation
-        center: relu(x) + relu(-x)
-        surround: - relu(x) - relu(-x)
-        """
+        center = param[:, :, 1:4, 1:4]
+        center_pad = F.pad(center, (1, 1, 1, 1))
+        surround = param - center_pad
+        center = F.relu(center) + F.relu(-center)
+        surround = - F.relu(surround) - F.relu(-surround)
+        surround_mean = surround.sum(dim=3).sum(dim=2) / 16
+        sur_w = surround_mean.unsqueeze(2).unsqueeze(3).repeat((1, 1, 1, 3))
+        sur_h = surround_mean.unsqueeze(2).unsqueeze(3).repeat((1, 1, 5, 1))
         # center = F.relu(param) + F.relu(-param)
-        center = param
-        center_mean = center.sum(dim=3).sum(dim=2) / 16
-        surround = -center_mean
-        sur_w = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 1, 3))
-        sur_h = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 5, 1))
+        # center_mean = center.sum(dim=3).sum(dim=2) / 16
+        # surround = -center_mean
+        # sur_w = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 1, 3))
+        # sur_h = surround.unsqueeze(2).unsqueeze(3).repeat((1, 1, 5, 1))
         weight = torch.cat([sur_h, torch.cat([sur_w, center, sur_w], dim=2), sur_h], dim=3)
 
         return weight
