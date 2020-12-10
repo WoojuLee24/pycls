@@ -134,25 +134,25 @@ class EndstoppingDivide5x5(nn.Conv2d):
         center: relu(x) + relu(-x)
         surround: - relu(x) - relu(-x)
         """
-        center = F.pad(param[:, :, 1:4, 1:4], (1, 1, 1, 1))
-        surround = param - center
-        center1 = F.pad(param[:, :, 2:3, 2:3], (2, 2, 2, 2))
-        center2 = center - center1
-
-        center1 = F.relu(center1) + F.relu(-center1)
-        center2 = F.relu(center2) + F.relu(-center2)
-        surround = - F.relu(surround) - F.relu(-surround)
-        center2 = center2 * 1/2
-        surround = surround * 5/16
-
-        weight = center1 + center2 + surround
-
         # center = F.pad(param[:, :, 1:4, 1:4], (1, 1, 1, 1))
         # surround = param - center
-        # center = F.relu(center) + F.relu(-center)
+        # center1 = F.pad(param[:, :, 2:3, 2:3], (2, 2, 2, 2))
+        # center2 = center - center1
+        #
+        # center1 = F.relu(center1) + F.relu(-center1)
+        # center2 = F.relu(center2) + F.relu(-center2)
         # surround = - F.relu(surround) - F.relu(-surround)
-        # surround = surround * decay_factor
-        # weight = center + surround
+        # center2 = center2 * 1/2
+        # surround = surround * 5/16
+        #
+        # weight = center1 + center2 + surround
+
+        center = F.pad(param[:, :, 1:4, 1:4], (1, 1, 1, 1))
+        surround = param - center
+        center = F.relu(center) + F.relu(-center)
+        surround = - F.relu(surround) - F.relu(-surround)
+        surround = surround * 9/16
+        weight = center + surround
 
         return weight
 
