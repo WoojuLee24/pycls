@@ -76,6 +76,7 @@ def get_block_fun(block_type):
         "res_basic_block": ResBasicBlock,
         "res_basic_block_no_bn": ResBasicBlockNoBn,
         "res_basic_surround_block": ResBasicSurroundBlock,
+        "res_basic_divide_block": EndstopDivideResBasicBlock,
         "res_bottleneck_block": ResBottleneckBlock,
         "res_bottleneck_block_end_proj": ResBottleneckBlockEndProj,
         "endstop_dilation_res_bottleneck_block": EndstopDilationResBottleneckBlock,
