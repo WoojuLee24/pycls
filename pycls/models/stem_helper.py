@@ -221,7 +221,7 @@ class ResStemCifarDivide5x5ConvDcEntire(Module):
         x = self.bn(x)
         x = self.af(x)
         x = self.e(x)
-        x = self.af(x)
+        # x = self.af(x)
         return x
 
     @staticmethod
