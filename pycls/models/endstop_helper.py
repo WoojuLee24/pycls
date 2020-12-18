@@ -208,6 +208,7 @@ class CenterSurround(nn.Conv2d):
         center = F.relu(center) + F.relu(-center)
         center2 = F.relu(center2) + F.relu(-center2)
         surround = - F.relu(surround) - F.relu(-surround)
+        # center2 =
         surround = surround * decay_factor
         center_pad = F.pad(center, (1, 1, 1, 1))
         center2_pad = center2.repeat(1, 1, 3, 3)

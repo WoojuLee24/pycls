@@ -20,6 +20,7 @@ import pycls.core.meters as meters
 import pycls.core.net as net
 import pycls.core.optimizer as optim
 import pycls.datasets.loader as loader
+import torch.nn.functional as F
 import torch
 from pycls.core.config import cfg
 
@@ -65,6 +66,59 @@ def setup_model():
         ddp = torch.nn.parallel.DistributedDataParallel
         model = ddp(module=model, device_ids=[cur_device], output_device=cur_device, find_unused_parameters=True)
     return model
+
+
+def train_epoch_aug(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch):
+    """Performs one epoch of training."""
+    # Shuffle the data
+    loader.shuffle(train_loader, cur_epoch)
+    # Update the learning rate
+    lr = optim.get_epoch_lr(cur_epoch)
+    optim.set_lr(optimizer, lr)
+    # Enable training mode
+    model.train()
+    train_meter.iter_tic()
+    for cur_iter, (inputs, labels) in enumerate(train_loader):
+        images_all = torch.cat(inputs, 0).cuda()
+        labels = labels.cuda()
+        logits_all = model(images_all)
+        logits_clean, logits_aug1, logits_aug2 = torch.split(
+            logits_all, inputs[0].size(0))
+
+        # Cross-entropy is only computed on clean images
+        loss = F.cross_entropy(logits_clean, labels)
+
+        p_clean, p_aug1, p_aug2 = F.softmax(
+            logits_clean, dim=1), F.softmax(
+            logits_aug1, dim=1), F.softmax(
+            logits_aug2, dim=1)
+
+        # Clamp mixture distribution to avoid exploding KL divergence
+        p_mixture = torch.clamp((p_clean + p_aug1 + p_aug2) / 3., 1e-7, 1).log()
+        loss += 12 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
+                      F.kl_div(p_mixture, p_aug1, reduction='batchmean') +
+                      F.kl_div(p_mixture, p_aug2, reduction='batchmean')) / 3.
+        preds = logits_clean
+        # Perform the backward pass
+        optimizer.zero_grad()
+        loss.backward()
+        # Update the parameters
+        optimizer.step()
+        # Compute the errors
+        top1_err, top5_err = meters.topk_errors(preds, labels, [1, 5])
+        # Combine the stats across the GPUs (no reduction if 1 GPU used)
+        loss, top1_err, top5_err = dist.scaled_all_reduce([loss, top1_err, top5_err])
+        # Copy the stats from GPU to CPU (sync point)
+        loss, top1_err, top5_err = loss.item(), top1_err.item(), top5_err.item()
+        train_meter.iter_toc()
+        # Update and log stats
+        mb_size = inputs[0].size(0) * cfg.NUM_GPUS
+        train_meter.update_stats(top1_err, top5_err, loss, lr, mb_size)
+        train_meter.log_iter_stats(cur_epoch, cur_iter)
+        train_meter.iter_tic()
+    # Log epoch stats
+    train_meter.log_epoch_stats(cur_epoch)
+    train_meter.reset()
 
 
 def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch):
@@ -190,8 +244,11 @@ def train_model():
     logger.info("Start epoch: {}".format(start_epoch + 1))
     for cur_epoch in range(start_epoch, cfg.OPTIM.MAX_EPOCH):
         last_epoch = cur_epoch + 1 == cfg.OPTIM.MAX_EPOCH
-        # Train for one epoch
-        train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
+        if cfg.DATA_LOADER.DATASET_ENABLE:
+            train_epoch_aug(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
+        else:
+            # Train for one epoch
+            train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
         # Compute precise BN stats
         if cfg.BN.USE_PRECISE_STATS:
             net.compute_precise_bn_stats(model, train_loader)

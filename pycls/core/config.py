@@ -299,6 +299,9 @@ _C.DATA_LOADER.NUM_WORKERS = 8
 # Load data to pinned host memory
 _C.DATA_LOADER.PIN_MEMORY = True
 
+# Built-in torchvision dataset module
+_C.DATA_LOADER.DATASET_ENABLE = False
+
 
 # ---------------------------------- CUDNN options ----------------------------------- #
 _C.CUDNN = CfgNode()

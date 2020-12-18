@@ -17,14 +17,17 @@ from pycls.datasets.cifarc import CifarC
 from pycls.datasets.imagenet import ImageNet
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler
+from pycls.datasets.transforms import AugMixDataset
 
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
 
+
 # Supported datasets
 _DATASETS = {"cifar10": Cifar10, "cifar100": Cifar100, "cifar10-c": CifarC, "cifar100-c": CifarC,
             "imagenet": ImageNet,"imagenet-style": ImageNet, "imagenet-edge": ImageNet, "imagenet-edge-reverse": ImageNet,
+             "tiny-imagenet": ImageNet, "tiny-imagenet-c": ImageNet,
              "imagenet-a": ImageNet, "imagenet200": ImageNet, "imagenet200-c": ImageNet}
 
 # Default data directory (/path/pycls/pycls/datasets/data)
@@ -34,6 +37,7 @@ _DATA_DIR = "/ws/data"
 # Relative data paths to default data directory
 _PATHS = {"cifar10": "cifar10", "cifar100": "cifar100", "cifar10-c": "cifar10-c", "cifar100-c": "cifar100-c",
           "imagenet": "imagenet", "imagenet-style": "imagenet-style", "imagenet-edge": "imagenet-edge", "imagenet-edge-reverse": "imagenet-edge-reverse",
+          "tiny-imagenet": "tiny-imagenet", "tiny-imagenet-c": "tiny-imagenet-c",
           "imagenet-a": "imagenet-a", "imagenet200": "imagenet200", "imagenet200-c": "imagenet200-c"}
 
 
@@ -82,8 +86,34 @@ def _construct_loader(dataset_name, split, batch_size, shuffle, drop_last):
     assert dataset_name in _DATASETS and dataset_name in _PATHS, err_str
     # Retrieve the data path for the dataset
     data_path = os.path.join(_DATA_DIR, _PATHS[dataset_name])
-    # Construct the dataset
-    dataset = _DATASETS[dataset_name](data_path, split)
+
+    if cfg.DATA_LOADER.DATASET_ENABLE:
+        # Load datasets
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+        train_transform = transforms.Compose(
+            [transforms.RandomResizedCrop(224),
+             transforms.RandomHorizontalFlip()])
+        preprocess = transforms.Compose(
+            [transforms.ToTensor(),
+             transforms.Normalize(mean, std)])
+        test_transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            preprocess,
+        ])
+        data_dir = os.path.join(data_path, split)
+
+        if split == 'train':
+            dataset = datasets.ImageFolder(data_dir, train_transform)
+            dataset = AugMixDataset(dataset, preprocess)
+        else:
+            dataset = datasets.ImageFolder(data_dir, test_transform)
+
+    else:
+        # Construct the dataset
+        dataset = _DATASETS[dataset_name](data_path, split)
+
     # Create a sampler for multi-process training
     sampler = DistributedSampler(dataset) if cfg.NUM_GPUS > 1 else None
     # Create a loader
@@ -108,7 +138,6 @@ def construct_train_loader():
         shuffle=True,
         drop_last=True,
     )
-
 
 
 def construct_test_loader():
