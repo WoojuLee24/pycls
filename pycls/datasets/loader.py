@@ -93,7 +93,8 @@ def _construct_loader(dataset_name, split, batch_size, shuffle, drop_last):
         std = [0.229, 0.224, 0.225]
         train_transform = transforms.Compose(
             [transforms.RandomResizedCrop(224),
-             transforms.RandomHorizontalFlip()])
+             transforms.RandomHorizontalFlip(),
+             transforms.ColorJitter()])
         preprocess = transforms.Compose(
             [transforms.ToTensor(),
              transforms.Normalize(mean, std)])
