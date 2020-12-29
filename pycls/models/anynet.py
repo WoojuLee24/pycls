@@ -18,6 +18,7 @@ def get_stem_fun(stem_type):
     stem_funs = {
         "res_stem_cifar": ResStemCifar,
         "res_stem_cifar_no_bn": ResStemCifarNoBn,
+        "res_stem_cifar_surround_dilation_conv_dc_entire": ResStemCifarSurroundDilationConvDcEntire,
         "res_stem_cifar_center_surround_conv_dc_entire": ResStemCifarCenterSurroundConvDcEntire,
         "res_stem_cifar_surround_divide_conv_dc_entire": ResStemCifarSurroundDivideConvDcEntire,
         "res_stem_cifar_surround_divide_conv_fc_entire": ResStemCifarSurroundDivideConvFcEntire,
@@ -75,6 +76,7 @@ def get_block_fun(block_type):
         "vanilla_block": VanillaBlock,
         "res_basic_block": ResBasicBlock,
         "res_basic_block_no_bn": ResBasicBlockNoBn,
+        "res_basic_surround_dilation_block": ResBasicSurroundDilationBlock,
         "res_basic_surround_block": ResBasicSurroundBlock,
         "res_basic_divide_block": EndstopDivideResBasicBlock,
         "res_bottleneck_block": ResBottleneckBlock,

@@ -496,6 +496,49 @@ class EndstoppingDilation(nn.Conv2d):
         return x
 
 
+class SurroundDilation(nn.Conv2d):
+
+    """
+    Surround dilation kernel for solving aperture problem
+    Using relu function to learn center-surround suppression
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, groups=1):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias)
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.center = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.replication_pad1 = nn.ReplicationPad2d(1)
+        self.replication_pad2 = nn.ReplicationPad2d(2)
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels//groups, kernel_size, kernel_size], dtype=torch.float, requires_grad=True)
+        param = param.cuda()
+        fan_out = kernel_size * kernel_size * out_channels
+        param.data.normal_(mean=0.0, std=np.sqrt(2.0 / fan_out))
+        return nn.Parameter(param)
+
+    def get_surround(self, param):
+        center = F.pad(param[:, :, 1:2, 1:2], (1, 1, 1, 1))
+        surround = param - center
+        surround = -surround
+        return surround
+
+    def forward(self, x):
+        surround = self.get_surround(self.center)
+        x1 = self.replication_pad1(x)
+        x2 = self.replication_pad2(x)
+        x1 = F.conv2d(x1, self.center, stride=self.stride, dilation=1, groups=self.groups)
+        x2 = F.conv2d(x2, surround, stride=self.stride, dilation=2, groups=self.groups)
+        x = x1 + x2
+        return x
+
+
 class EndstoppingDilationPReLU(nn.Conv2d):
 
     """
