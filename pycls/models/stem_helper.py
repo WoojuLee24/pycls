@@ -83,6 +83,36 @@ class ResStemCifarNoBn(Module):
         return cx
 
 
+class ResStemCifarSMDcEntire(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarSMDcEntire, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.conv2 = conv2d(w_out, w_out, 3, groups=w_out)
+        self.bn2 = norm2d(w_out)
+
+
+    def forward(self, x):
+        x1 = self.conv(x)
+        x1 = self.bn(x1)
+        x1 = self.af(x1)
+        x2 = self.conv2(x1)
+        x2 = self.bn2(x2)
+        x2 = self.af(x2)
+        x = x1 - x2
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
 class ResStemCifarSurroundDilationConvDcEntire(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
 
