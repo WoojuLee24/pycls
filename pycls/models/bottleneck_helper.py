@@ -219,7 +219,7 @@ class BasicSMAvgEntireTransform(Module):
         self.a = conv2d(w_in, w_out, 3, stride=stride)
         self.a_bn = norm2d(w_out)
         self.a_af = activation()
-        self.b = nn.AvgPool2d(3, stride=stride)
+        self.b = nn.AvgPool2d(3, stride=1, padding=1)
         self.c = conv2d(w_out, w_out, 3)
         self.c_bn = norm2d(w_out)
         self.c_bn.final_bn = True
