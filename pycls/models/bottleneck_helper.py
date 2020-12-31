@@ -462,9 +462,9 @@ class BasicSurroundTransform(Module):
         self.a_bn = norm2d(w_out)
         self.a_af = activation()
         # self.b = conv2d(w_out, w_out, 3)
-        self.b = SurroundDivide(w_out, w_out, 3, stride=1, groups=1)
-        # self.b_bn = norm2d(w_out)
-        # self.b_bn.final_bn = True
+        self.b = SurroundDivide(w_out, w_out, 5, stride=1, groups=1)
+        self.b_bn = norm2d(w_out)
+        self.b_bn.final_bn = True
 
     def forward(self, x):
         x = self.a(x)
