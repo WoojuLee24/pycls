@@ -355,7 +355,6 @@ class SurroundDivide(nn.Conv2d):
 
     def forward(self, x):
         weight = self.get_weight_5x5(self.param)
-        weight = self.standardize_weight(weight)
         x = self.replication_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         # x = F.conv2d(x, weight, stride=self.stride, padding=self.padding, groups=self.groups)

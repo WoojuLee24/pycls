@@ -82,6 +82,7 @@ def get_block_fun(block_type):
         "res_basic_block_sm_avg_entire": ResBasicBlockSMAvgEntire,
         "res_basic_surround_dilation_block": ResBasicSurroundDilationBlock,
         "res_basic_surround_block": ResBasicSurroundBlock,
+        "res_basic_surround_division_block": ResBasicSurroundDivisionBlock,
         "res_basic_divide_block": EndstopDivideResBasicBlock,
         "res_bottleneck_block": ResBottleneckBlock,
         "res_bottleneck_block_end_proj": ResBottleneckBlockEndProj,
