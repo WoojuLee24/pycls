@@ -78,6 +78,7 @@ def get_block_fun(block_type):
         "vanilla_block": VanillaBlock,
         "res_basic_block": ResBasicBlock,
         "res_basic_block_no_bn": ResBasicBlockNoBn,
+        "res_basic_block_sm": ResBasicBlockSM,
         "res_basic_block_sm_dc_entire": ResBasicBlockSMDcEntire,
         "res_basic_block_sm_avg_entire": ResBasicBlockSMAvgEntire,
         "res_basic_surround_dilation_block": ResBasicSurroundDilationBlock,
