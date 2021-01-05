@@ -649,7 +649,7 @@ class ResStemCifarCompareFixedSmConvDcEntireNoafConv(Module):
         super(ResStemCifarCompareFixedSmConvDcEntireNoafConv, self).__init__()
         self.conv = conv2d(w_out, w_out, 3)
         self.bn = norm2d(w_out)
-        self.e = CompareFixedSM(w_in, w_in, 5, stride=1, groups=w_out)
+        self.e = CompareFixedSM(w_in, w_in, 5, stride=1, groups=w_in)
         self.af = activation()
 
     def forward(self, x):
