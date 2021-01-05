@@ -18,6 +18,7 @@ from pycls.models.blocks import (
 import torch
 from torch.nn import Module
 from pycls.models.endstop_helper import *
+from pycls.models.blurpool import *
 
 class VanillaBlock(Module):
     """Vanilla block: [3x3 conv, BN, Relu] x2."""

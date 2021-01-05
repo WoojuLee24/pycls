@@ -17,7 +17,7 @@ from pycls.models.blocks import (
 import torch
 from torch.nn import Module
 from pycls.models.endstop_helper import *
-
+from pycls.models.blurpool import *
 
 class ResStemCifar(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
@@ -569,6 +569,29 @@ class ResStemCifarDilationConvDcEntire(Module):
         return cx
 
 
+class ResStemCifarCompareFixedLPNoaf(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarCompareFixedLPNoaf, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.e = BlurPool(w_out, filt_size=5, stride=1)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.e(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
 
 class ResStemCifarCompareFixedSmConvDcEntire(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
@@ -617,6 +640,31 @@ class ResStemCifarCompareFixedSmConvDcEntireNoaf(Module):
         cx = conv2d_cx(cx, w_in, w_out, 3)
         cx = norm2d_cx(cx, w_out)
         return cx
+
+
+class ResStemCifarCompareFixedSmConvDcEntireNoafConv(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarCompareFixedSmConvDcEntireNoafConv, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.e = CompareFixedSM(w_out, w_out, 5, stride=1, groups=w_out)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.e(x)
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
 
 
 class ResStemCifar7x7ConvFcBnEntire(Module):
