@@ -51,6 +51,6 @@ class BlurKernelConv(nn.Conv2d):
     def forward(self, x):
         weight = self.param
         weight = self.get_weight(weight, self.in_channels)
-        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
+        x = F.conv2d(x, weight, padding=1, stride=self.stride, groups=self.groups)
 
         return x
