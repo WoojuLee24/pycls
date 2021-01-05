@@ -18,6 +18,7 @@ def get_stem_fun(stem_type):
     stem_funs = {
         "res_stem_cifar": ResStemCifar,
         "res_stem_cifar_no_bn": ResStemCifarNoBn,
+        "res_stem_cifar_blur_kernel_conv": ResStemCifarBlurKernelConv,
         "res_stem_cifar_sm_dc_entire": ResStemCifarSMDcEntire,
         "res_stem_cifar_sm_avg_entire": ResStemCifarSMAvgEntire,
         "res_stem_cifar_surround_dilation_conv_dc_entire": ResStemCifarSurroundDilationConvDcEntire,

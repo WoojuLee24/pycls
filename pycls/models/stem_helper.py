@@ -18,6 +18,7 @@ import torch
 from torch.nn import Module
 from pycls.models.endstop_helper import *
 from pycls.models.blurpool import *
+from pycls.models.kernel_helper import *
 
 class ResStemCifar(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
@@ -63,7 +64,6 @@ class ResStemCifarAvg(Module):
         return cx
 
 
-
 class ResStemCifarNoBn(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
 
@@ -80,6 +80,28 @@ class ResStemCifarNoBn(Module):
     @staticmethod
     def complexity(cx, w_in, w_out):
         cx = conv2d_cx(cx, w_in, w_out, 3)
+        return cx
+
+
+class ResStemCifarBlurKernelConv(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarBlurKernelConv, self).__init__()
+        self.conv = BlurKernelConv(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
         return cx
 
 
@@ -576,7 +598,7 @@ class ResStemCifarCompareFixedLPNoaf(Module):
         super(ResStemCifarCompareFixedLPNoaf, self).__init__()
         self.conv = conv2d(w_in, w_out, 3)
         self.bn = norm2d(w_out)
-        self.e = BlurPool(w_out, filt_size=5, stride=1)
+        self.e = BlurPool(w_out, filt_size=3, stride=1)
         self.af = activation()
 
     def forward(self, x):
