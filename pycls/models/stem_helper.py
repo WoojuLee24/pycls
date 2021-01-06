@@ -622,7 +622,7 @@ class ResStemCifarCompareFixedHPNoaf(Module):
         super(ResStemCifarCompareFixedHPNoaf, self).__init__()
         self.conv = conv2d(w_in, w_out, 3)
         self.bn = norm2d(w_out)
-        self.e = BlurPool(w_out, filt_size=3, stride=1)
+        self.e = CompareFixedHP(w_out, w_out)
         self.af = activation()
 
     def forward(self, x):

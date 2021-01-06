@@ -697,7 +697,7 @@ class CompareFixedHP(nn.Conv2d):
         kernel = torch.tensor([[-1/8, -1/8, -1/8],
                               [-1/8, 1, -1/8],
                               [-1/8, -1/8, -1/8]], requires_grad=False).cuda()
-        kernel = kernel/torch.sum(kernel)
+        # kernel = kernel/torch.sum(kernel)
         kernel = kernel.repeat((out_channels, in_channels//groups, 1, 1))
 
         return kernel
