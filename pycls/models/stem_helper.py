@@ -615,6 +615,31 @@ class ResStemCifarCompareFixedLPNoaf(Module):
         return cx
 
 
+class ResStemCifarCompareFixedHPNoaf(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarCompareFixedHPNoaf, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.e = BlurPool(w_out, filt_size=3, stride=1)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.e(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+
 class ResStemCifarCompareFixedSmConvDcEntire(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
 

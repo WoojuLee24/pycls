@@ -176,6 +176,7 @@ def init_weights(m):
             or isinstance(m, CenterSurround) \
             or isinstance(m, SurroundDilation) \
             or isinstance(m, BlurKernelConv) \
+            or isinstance(m, CompareFixedHP) \
             or isinstance(m, EndstoppingSlopeTanh2):
         pass
     elif isinstance(m, nn.Conv2d):

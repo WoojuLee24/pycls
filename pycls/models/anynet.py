@@ -40,6 +40,7 @@ def get_stem_fun(stem_type):
         "res_stem_cifar_dilation_conv_dc_entire": ResStemCifarDilationConvDcEntire,
         "res_stem_cifar_compare_fixed_sm_conv_dc_entire": ResStemCifarCompareFixedSmConvDcEntire,
         "res_stem_cifar_compare_fixed_lp_no_af": ResStemCifarCompareFixedLPNoaf,
+        "res_stem_cifar_compare_fixed_hp_no_af": ResStemCifarCompareFixedHPNoaf,
         "res_stem_cifar_compare_fixed_sm_conv_dc_entire_no_af": ResStemCifarCompareFixedSmConvDcEntireNoaf,
         "res_stem_cifar_compare_fixed_sm_conv_dc_entire_no_af_conv": ResStemCifarCompareFixedSmConvDcEntireNoafConv,
         "res_stem_cifar_compare_7x7_conv_fc_bn_entire": ResStemCifar7x7ConvFcBnEntire,
