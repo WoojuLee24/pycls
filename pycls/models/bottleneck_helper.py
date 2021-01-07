@@ -294,6 +294,34 @@ class ResBasicBlockSM2(Module):
         return cx
 
 
+class ResBasicBlockLP(Module):
+    """Residual basic block: x + f(x), f = basic transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(ResBasicBlockLP, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.bn = norm2d(w_out)
+        self.f = BasicTransform(w_in, w_out, stride, params)
+        self.filt = BlurPool(w_out, filt_size=3, stride=1)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(x)) if self.proj else x
+        return self.filt(self.af(x_p + self.f(x)))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = BasicTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
 class BasicSMDcEntireTransform(Module):
     """Basic transformation: [3x3 conv, BN, Relu] x2."""
 

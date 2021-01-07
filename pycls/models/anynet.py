@@ -90,6 +90,7 @@ def get_block_fun(block_type):
         "res_basic_block_blur_kernel_conv": ResBasicBlockBlurKernelConv,
         "res_basic_block_sm": ResBasicBlockSM,
         "res_basic_block_sm2": ResBasicBlockSM2,
+        "res_basic_block_lp": ResBasicBlockLP,
         "res_basic_block_sm_dc_entire": ResBasicBlockSMDcEntire,
         "res_basic_block_sm_avg_entire": ResBasicBlockSMAvgEntire,
         "res_basic_surround_dilation_block": ResBasicSurroundDilationBlock,
