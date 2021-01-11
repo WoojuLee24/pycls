@@ -14,7 +14,7 @@ from pycls.core.config import cfg
 from torch.nn import Module
 from pycls.models.endstop_helper import *
 from pycls.models.kernel_helper import *
-
+from pycls.models.blurpool import *
 
 # ----------------------- Shortcuts for common torch.nn layers ----------------------- #
 
@@ -177,6 +177,7 @@ def init_weights(m):
             or isinstance(m, SurroundDilation) \
             or isinstance(m, BlurKernelConv) \
             or isinstance(m, CompareFixedHP) \
+            or isinstance(m, SigmaBlurPool) \
             or isinstance(m, EndstoppingSlopeTanh2):
         pass
     elif isinstance(m, nn.Conv2d):

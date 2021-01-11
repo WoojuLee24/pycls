@@ -7,6 +7,7 @@
 import torch
 import torch.nn.parallel
 import numpy as np
+import math
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -50,6 +51,53 @@ class BlurPool(nn.Module):
                 return self.pad(inp)[:,:,::self.stride,::self.stride]
         else:
             return F.conv2d(self.pad(inp), self.filt, stride=self.stride, groups=inp.shape[1])
+
+
+class SigmaBlurPool(nn.Conv2d):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
+                 groups=1, bias=False, padding_mode='reflect'):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
+                         groups=groups, bias=bias, padding_mode=padding_mode)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.reflection_pad = nn.ReflectionPad2d(1)
+        self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
+                            requires_grad=True)
+        param = param.cuda()
+        fan_out = kernel_size * kernel_size * out_channels
+        param.data.normal_(mean=0.8, std=np.sqrt(2.0 / fan_out))
+        # param.data.normal_(mean=0.0, std=np.sqrt(6.0 / fan_out))
+        # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
+        return nn.Parameter(param)
+
+    def get_weight(self, param):
+        x = self.get_gaussian(param, loc=0)
+        y = self.get_gaussian(param, loc=1)
+        z = self.get_gaussian(param, loc=2)
+        row1 = torch.cat([z, y, z], dim=2)
+        row2 = torch.cat([y, x, y], dim=2)
+        weight = torch.cat([row1, row2, row1], dim=3)
+
+        return weight
+
+    def get_gaussian(self, a, loc):
+        return 1 / math.sqrt(2 * math.pi) / a * torch.exp(-loc / 2 / a / a)
+
+
+    def forward(self, x):
+        weight = self.get_weight(self.param)
+        x = self.reflection_pad(x)
+        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
+        return x
+
 
 def get_pad_layer(pad_type):
     if(pad_type in ['refl','reflect']):

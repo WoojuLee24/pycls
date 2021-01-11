@@ -87,6 +87,8 @@ def get_block_fun(block_type):
         "vanilla_block": VanillaBlock,
         "res_basic_block": ResBasicBlock,
         "res_basic_block_no_bn": ResBasicBlockNoBn,
+        "res_basic_max_blur_pool_block": ResBasicMaxBlurPoolBlock,
+        "res_sigma_max_blur_pool_block": ResSigmaMaxBlurPoolBlock,
         "res_basic_block_blur_kernel_conv": ResBasicBlockBlurKernelConv,
         "res_basic_block_sm": ResBasicBlockSM,
         "res_basic_block_sm2": ResBasicBlockSM2,
