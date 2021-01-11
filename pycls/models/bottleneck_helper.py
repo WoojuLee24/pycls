@@ -218,6 +218,124 @@ class ResSigmaMaxBlurPoolBlock(Module):
         return cx
 
 
+class AbsSigmaMaxBlurPoolTransform(Module):
+    """Basic transformation: [3x3 conv, BN, Relu] x2."""
+
+    def __init__(self, w_in, w_out, stride, _params):
+        super(AbsSigmaMaxBlurPoolTransform, self).__init__()
+        if stride != 1:
+            self.a = conv2d(w_in, w_out, 3, stride=1)
+            self.a_bn = norm2d(w_out)
+            self.a_af = activation()
+            self.max_blur = AbsSigmaBlurPool(w_out, w_out, stride=stride)
+        else:
+            self.a = conv2d(w_in, w_out, 3, stride=stride)
+            self.a_bn = norm2d(w_out)
+            self.a_af = activation()
+        self.b = conv2d(w_out, w_out, 3)
+        self.b_bn = norm2d(w_out)
+        self.b_bn.final_bn = True
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, _params):
+        cx = conv2d_cx(cx, w_in, w_out, 3, stride=stride)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_out, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResAbsSigmaMaxBlurPoolBlock(Module):
+    """Residual basic block: x + f(x), f = basic transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(ResAbsSigmaMaxBlurPoolBlock, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.bn = norm2d(w_out)
+        self.f = AbsSigmaMaxBlurPoolTransform(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(x)) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = BasicTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
+class SigmaNormMaxBlurPoolTransform(Module):
+    """Basic transformation: [3x3 conv, BN, Relu] x2."""
+
+    def __init__(self, w_in, w_out, stride, _params):
+        super(SigmaNormMaxBlurPoolTransform, self).__init__()
+        if stride != 1:
+            self.a = conv2d(w_in, w_out, 3, stride=1)
+            self.a_bn = norm2d(w_out)
+            self.a_af = activation()
+            self.max_blur = SigmaNormBlurPool(w_out, w_out, stride=stride)
+        else:
+            self.a = conv2d(w_in, w_out, 3, stride=stride)
+            self.a_bn = norm2d(w_out)
+            self.a_af = activation()
+        self.b = conv2d(w_out, w_out, 3)
+        self.b_bn = norm2d(w_out)
+        self.b_bn.final_bn = True
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, _params):
+        cx = conv2d_cx(cx, w_in, w_out, 3, stride=stride)
+        cx = norm2d_cx(cx, w_out)
+        cx = conv2d_cx(cx, w_out, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResSigmaNormMaxBlurPoolBlock(Module):
+    """Residual basic block: x + f(x), f = basic transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(ResSigmaNormMaxBlurPoolBlock, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.bn = norm2d(w_out)
+        self.f = SigmaNormMaxBlurPoolTransform(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(x)) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = BasicTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
 class BasicTransformNoBn(Module):
     """Basic transformation: [3x3 conv, BN, Relu] x2."""
 
