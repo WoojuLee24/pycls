@@ -266,8 +266,8 @@ class SigmaCenterNormBlurPool(nn.Conv2d):
         return b * torch.exp(-loc * math.pi * b * b)
 
     def normalize_weight(self, weight):
-        k = weight[:, :, 1:2, 1:2]
-        center = F.pad(weight[:, :, 1:2, 1:2], (1, 1, 1, 1))
+        center = weight[:, :, 1:2, 1:2]
+        center = center.repeat((1, 1, 3, 3))
         normalized_weight = weight / center
         return normalized_weight
 
