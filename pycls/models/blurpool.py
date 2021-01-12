@@ -438,7 +438,7 @@ class SigmaCenterNormBlurPool5x5(nn.Conv2d):
                             requires_grad=True)
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
-        param.data.normal_(mean=0.5, std=np.sqrt(2.0 / fan_out))
+        param.data.normal_(mean=0.4, std=np.sqrt(0.05 / fan_out))
         return nn.Parameter(param)
 
     def get_weight(self, param):
@@ -470,7 +470,7 @@ class SigmaCenterNormBlurPool5x5(nn.Conv2d):
 
     def forward(self, x):
         weight = self.get_weight(self.param)
-        weight_norm = self.normalize_weight(weight)
+        # weight_norm = self.normalize_weight(weight)
         x = self.reflection_pad(x)
         x = F.conv2d(x, weight_norm, stride=self.stride, groups=self.groups)
         return x
