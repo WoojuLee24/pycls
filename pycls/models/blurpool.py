@@ -473,5 +473,5 @@ class SigmaCenterNormBlurPool5x5(nn.Conv2d):
         weight = self.get_weight(self.param)
         weight_norm = self.normalize_weight(weight)
         x = self.reflection_pad(x)
-        x = F.conv2d(x, weight stride=self.stride, groups=self.groups)
+        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         return x
