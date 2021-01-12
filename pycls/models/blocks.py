@@ -181,6 +181,7 @@ def init_weights(m):
             or isinstance(m, AbsSigmaBlurPool) \
             or isinstance(m, SigmaNormBlurPool) \
             or isinstance(m, SigmaCenterNormBlurPool) \
+            or isinstance(m, DogBlurPool) \
             or isinstance(m, EndstoppingSlopeTanh2):
         pass
     elif isinstance(m, nn.Conv2d):

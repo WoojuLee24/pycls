@@ -65,6 +65,41 @@ def get_pad_layer(pad_type):
     return PadLayer
 
 
+class DogBlurPool(nn.Conv2d):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
+                 groups=1, bias=False, padding_mode='reflect'):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
+                         groups=groups, bias=bias, padding_mode=padding_mode)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.reflection_pad = nn.ReflectionPad2d(2)
+        self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        kernel = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
+                               [-0.23, 0.17, 0.49, 0.17, -0.23],
+                               [-0.18, 0.49, 1, 0.49, -0.18],
+                               [-0.23, 0.17, 0.49, 0.17, -0.23],
+                               [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        # kernel = torch.tensor([[-1/8, -1/8, -1/8],
+        #                       [-1/8, 1, -1/8],
+        #                       [-1/8, -1/8, -1/8]], requires_grad=False).cuda()
+        kernel = kernel.repeat((out_channels, in_channels//groups, 1, 1))
+
+        return kernel
+
+    def forward(self, x):
+        x = self.reflection_pad(x)
+        x = F.conv2d(x, self.param, stride=self.stride, groups=self.groups)
+        return x
+
+
+
 class SigmaBlurPool(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
                  groups=1, bias=False, padding_mode='reflect'):
