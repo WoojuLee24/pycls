@@ -184,7 +184,6 @@ class CustomBlurPool(nn.Conv2d):
         return x
 
 
-
 class SigmaBlurPool(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
                  groups=1, bias=False, padding_mode='reflect'):
@@ -196,7 +195,7 @@ class SigmaBlurPool(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
-        self.reflection_pad = nn.ReflectionPad2d(1)
+        self.reflection_pad = nn.ReflectionPad2d(2)
         self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
 
 
@@ -205,24 +204,26 @@ class SigmaBlurPool(nn.Conv2d):
                             requires_grad=True)
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
-        param.data.normal_(mean=0.8, std=np.sqrt(2.0 / fan_out))
-        # param.data.normal_(mean=0.0, std=np.sqrt(6.0 / fan_out))
-        # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
+        param.data.normal_(mean=0.159, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
         return nn.Parameter(param)
 
     def get_weight(self, param):
-        x = self.get_gaussian(param, loc=0)
-        y = self.get_gaussian(param, loc=1)
-        z = self.get_gaussian(param, loc=2)
-        row1 = torch.cat([z, y, z], dim=2)
-        row2 = torch.cat([y, x, y], dim=2)
-        weight = torch.cat([row1, row2, row1], dim=3)
-
+        param = F.relu(param) + F.relu(-param)
+        o = self.get_gaussian_inv(param, loc=0)
+        x = self.get_gaussian_inv(param, loc=1)
+        y = self.get_gaussian_inv(param, loc=2)
+        z = self.get_gaussian_inv(param, loc=4)
+        u = self.get_gaussian_inv(param, loc=5)
+        v = self.get_gaussian_inv(param, loc=8)
+        row1 = torch.cat([v, u, z, u, v], dim=2)
+        row2 = torch.cat([u, y, x, y, u], dim=2)
+        row3 = torch.cat([z, x, o, x, z], dim=2)
+        weight = torch.cat([row1, row2, row3, row2, row1], dim=3)
         return weight
 
-    def get_gaussian(self, a, loc):
-        return 1 / math.sqrt(2 * math.pi) / a * torch.exp(-loc / 2 / a / a)
-
+    def get_gaussian_inv(self, b, loc):
+        # return b * b * torch.exp(-loc * math.pi * b * b)
+        return b * torch.exp(-loc * math.pi * b)
 
     def forward(self, x):
         weight = self.get_weight(self.param)
@@ -480,7 +481,7 @@ class SigmaCenterNormBlurPool5x5(nn.Conv2d):
                             requires_grad=True)
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
-        param.data.normal_(mean=0.2, std=np.sqrt(0.05 / fan_out))
+        param.data.normal_(mean=0.49, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
         return nn.Parameter(param)
 
     def get_weight(self, param):
@@ -502,7 +503,8 @@ class SigmaCenterNormBlurPool5x5(nn.Conv2d):
         return 1 / math.sqrt(2 * math.pi) / a * torch.exp(-loc / 2 / a / a)
 
     def get_gaussian_inv(self, b, loc):
-        return b * torch.exp(-loc * math.pi * b * b)
+        # return b * torch.exp(-loc * math.pi * b * b)
+        return b * torch.exp(-loc * math.pi * b)
 
     def normalize_weight(self, weight):
         center = weight[:, :, 2:3, 2:3]
@@ -515,5 +517,5 @@ class SigmaCenterNormBlurPool5x5(nn.Conv2d):
         weight = self.get_weight(self.param)
         weight_norm = self.normalize_weight(weight)
         x = self.reflection_pad(x)
-        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
+        x = F.conv2d(x, weight_norm, stride=self.stride, groups=self.groups)
         return x
