@@ -360,7 +360,7 @@ class SigmaNormBlurPool5x5(nn.Conv2d):
                             requires_grad=True)
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
-        param.data.normal_(mean=0.7, std=np.sqrt(0.05 / fan_out))
+        param.data.normal_(mean=0.49, std=np.sqrt(0.05 / fan_out))
         return nn.Parameter(param)
 
     def get_weight(self, param):
@@ -382,7 +382,7 @@ class SigmaNormBlurPool5x5(nn.Conv2d):
         return 1 / math.sqrt(2 * math.pi) / a * torch.exp(-loc / 2 / a / a)
 
     def get_gaussian_inv(self, b, loc):
-        return 1 / math.pi * b * b * torch.exp(-loc * b * b)
+        return 1 / math.pi * b * torch.exp(-loc * b)
 
     def normalize_weight(self, weight):
         weight_sum = weight.sum(dim=2, keepdim=True).sum(dim=3, keepdim=True)
