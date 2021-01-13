@@ -204,7 +204,7 @@ class SigmaBlurPool(nn.Conv2d):
                             requires_grad=True)
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
-        param.data.normal_(mean=0.159, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
+        param.data.normal_(mean=0.4, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
         return nn.Parameter(param)
 
     def get_weight(self, param):
@@ -223,7 +223,7 @@ class SigmaBlurPool(nn.Conv2d):
 
     def get_gaussian_inv(self, b, loc):
         # return b * b * torch.exp(-loc * math.pi * b * b)
-        return b * torch.exp(-loc * math.pi * b)
+        return b * b * torch.exp(-loc * math.pi * b * b)
 
     def forward(self, x):
         weight = self.get_weight(self.param)
