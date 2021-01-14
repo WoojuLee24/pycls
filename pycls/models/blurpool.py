@@ -203,8 +203,10 @@ class SigmaBlurPool(nn.Conv2d):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
                             requires_grad=True)
         param = param.cuda()
-        fan_out = kernel_size * kernel_size * out_channels
-        param.data.normal_(mean=0.4, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
+        # fan_out = kernel_size * kernel_size * out_channels
+        # std = np.sqrt(0.05 / fan_out)
+        # param.data.normal_(mean=0.4, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
+        nn.init.constant_(param, 0.375)
         return nn.Parameter(param)
 
     def get_weight(self, param):
