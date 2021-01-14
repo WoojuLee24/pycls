@@ -277,16 +277,16 @@ class ResSigmaMaxBlurPoolBlock(Module):
         return cx
 
 
-class AbsSigmaMaxBlurPoolTransform(Module):
+class NormalMaxBlurPoolTransform(Module):
     """Basic transformation: [3x3 conv, BN, Relu] x2."""
 
     def __init__(self, w_in, w_out, stride, _params):
-        super(AbsSigmaMaxBlurPoolTransform, self).__init__()
+        super(NormalMaxBlurPoolTransform, self).__init__()
         if stride != 1:
             self.a = conv2d(w_in, w_out, 3, stride=1)
             self.a_bn = norm2d(w_out)
             self.a_af = activation()
-            self.max_blur = AbsSigmaBlurPool(w_out, w_out, stride=stride)
+            self.max_blur = NormalBlurPool(w_out, w_out, stride=stride)
         else:
             self.a = conv2d(w_in, w_out, 3, stride=stride)
             self.a_bn = norm2d(w_out)
@@ -309,16 +309,16 @@ class AbsSigmaMaxBlurPoolTransform(Module):
         return cx
 
 
-class ResAbsSigmaMaxBlurPoolBlock(Module):
+class ResNormalMaxBlurPoolBlock(Module):
     """Residual basic block: x + f(x), f = basic transform."""
 
     def __init__(self, w_in, w_out, stride, params):
-        super(ResAbsSigmaMaxBlurPoolBlock, self).__init__()
+        super(ResNormalMaxBlurPoolBlock, self).__init__()
         self.proj, self.bn = None, None
         if (w_in != w_out) or (stride != 1):
             self.proj = conv2d(w_in, w_out, 1, stride=stride)
             self.bn = norm2d(w_out)
-        self.f = AbsSigmaMaxBlurPoolTransform(w_in, w_out, stride, params)
+        self.f = NormalMaxBlurPoolTransform(w_in, w_out, stride, params)
         self.af = activation()
 
     def forward(self, x):

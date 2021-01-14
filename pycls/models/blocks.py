@@ -178,7 +178,7 @@ def init_weights(m):
             or isinstance(m, BlurKernelConv) \
             or isinstance(m, CompareFixedHP) \
             or isinstance(m, SigmaBlurPool) \
-            or isinstance(m, AbsSigmaBlurPool) \
+            or isinstance(m, NormalBlurPool) \
             or isinstance(m, SigmaNormBlurPool) \
             or isinstance(m, SigmaCenterNormBlurPool) \
             or isinstance(m, SigmaCenterNormBlurPool5x5) \
