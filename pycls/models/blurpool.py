@@ -286,6 +286,193 @@ class NormalBlurPool(nn.Conv2d):
         return x
 
 
+class NormalSumBlurPool(nn.Conv2d):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
+                 groups=1, bias=False, padding_mode='reflect'):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
+                         groups=groups, bias=bias, padding_mode=padding_mode)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.reflection_pad = nn.ReflectionPad2d(2)
+        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
+                            requires_grad=True)
+        param = param.cuda()
+        # fan_out = kernel_size * kernel_size * out_channels
+        # std = np.sqrt(0.05 / fan_out)
+        # param.data.normal_(mean=0.375, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
+        nn.init.constant_(param, 0.375)
+        return nn.Parameter(param)
+
+    def get_weight(self, param1, param2):
+        param1 = F.relu(param1) + F.relu(-param1)
+        param2 = F.relu(param2) + F.relu(-param2)
+        o = self.get_gaussian_inv(param1, param2, loc=0)
+        x = self.get_gaussian_inv(param1, param2, loc=1)
+        y = self.get_gaussian_inv(param1, param2, loc=2)
+        z = self.get_gaussian_inv(param1, param2, loc=4)
+        u = self.get_gaussian_inv(param1, param2, loc=5)
+        v = self.get_gaussian_inv(param1, param2, loc=8)
+        row1 = torch.cat([v, u, z, u, v], dim=2)
+        row2 = torch.cat([u, y, x, y, u], dim=2)
+        row3 = torch.cat([z, x, o, x, z], dim=2)
+        weight = torch.cat([row1, row2, row3, row2, row1], dim=3)
+        return weight
+
+    def get_gaussian_inv(self, a, b, loc):
+        # return b * b * torch.exp(-loc * math.pi * b * b)
+        return a * a * torch.exp(-loc * math.pi * b * b)
+        # return b * torch.exp(-loc * math.pi * b * b)
+
+    def normalize_by_sum(self, weight):
+        weight_sum = weight.sum(dim=2, keepdim=True).sum(dim=3, keepdim=True)
+        normalized_weight = weight / weight_sum
+        return normalized_weight
+
+    def normalize_by_center(self, weight):
+        center = weight[:, :, 2:3, 2:3]
+        center = center.repeat((1, 1, 5, 5))
+        normalized_weight = weight / center
+        return normalized_weight
+
+    def forward(self, x):
+        weight = self.get_weight(self.param1, self.param2)
+        weight_norm = self.normalize_by_sum(weight)
+        x = self.reflection_pad(x)
+        x = F.conv2d(x, weight_norm, stride=self.stride, groups=self.groups)
+        return x
+
+
+class NormalCenterBlurPool(nn.Conv2d):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
+                 groups=1, bias=False, padding_mode='reflect'):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
+                         groups=groups, bias=bias, padding_mode=padding_mode)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.reflection_pad = nn.ReflectionPad2d(2)
+        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
+                            requires_grad=True)
+        param = param.cuda()
+        # fan_out = kernel_size * kernel_size * out_channels
+        # std = np.sqrt(0.05 / fan_out)
+        # param.data.normal_(mean=0.375, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
+        nn.init.constant_(param, 0.375)
+        return nn.Parameter(param)
+
+    def get_weight(self, param1, param2):
+        param1 = F.relu(param1) + F.relu(-param1)
+        param2 = F.relu(param2) + F.relu(-param2)
+        o = self.get_gaussian_inv(param1, param2, loc=0)
+        x = self.get_gaussian_inv(param1, param2, loc=1)
+        y = self.get_gaussian_inv(param1, param2, loc=2)
+        z = self.get_gaussian_inv(param1, param2, loc=4)
+        u = self.get_gaussian_inv(param1, param2, loc=5)
+        v = self.get_gaussian_inv(param1, param2, loc=8)
+        row1 = torch.cat([v, u, z, u, v], dim=2)
+        row2 = torch.cat([u, y, x, y, u], dim=2)
+        row3 = torch.cat([z, x, o, x, z], dim=2)
+        weight = torch.cat([row1, row2, row3, row2, row1], dim=3)
+        return weight
+
+    def get_gaussian_inv(self, a, b, loc):
+        # return b * b * torch.exp(-loc * math.pi * b * b)
+        return a * a * torch.exp(-loc * math.pi * b * b)
+        # return b * torch.exp(-loc * math.pi * b * b)
+
+    def normalize_by_sum(self, weight):
+        weight_sum = weight.sum(dim=2, keepdim=True).sum(dim=3, keepdim=True)
+        normalized_weight = weight / weight_sum
+        return normalized_weight
+
+    def normalize_by_center(self, weight):
+        center = weight[:, :, 2:3, 2:3]
+        center = center.repeat((1, 1, 5, 5))
+        normalized_weight = weight / center
+        return normalized_weight
+
+    def forward(self, x):
+        weight = self.get_weight(self.param1, self.param2)
+        weight_norm = self.normalize_by_center(weight)
+        x = self.reflection_pad(x)
+        x = F.conv2d(x, weight_norm, stride=self.stride, groups=self.groups)
+        return x
+
+
+
+class SigmaNormBlurPool(nn.Conv2d):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
+                 groups=1, bias=False, padding_mode='reflect'):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
+                         groups=groups, bias=bias, padding_mode=padding_mode)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.reflection_pad = nn.ReflectionPad2d(1)
+        self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
+                            requires_grad=True)
+        param = param.cuda()
+        fan_out = kernel_size * kernel_size * out_channels
+        param.data.normal_(mean=0.5, std=np.sqrt(2.0 / fan_out))
+        # param.data.normal_(mean=0.0, std=np.sqrt(6.0 / fan_out))
+        # nn.init.kaiming_normal_(param, mode='fan_out', nonlinearity='relu')
+        return nn.Parameter(param)
+
+    def get_weight(self, param):
+        param = F.relu(param) + F.relu(-param)
+        # x = self.get_gaussian(param, loc=0)
+        # y = self.get_gaussian(param, loc=1)
+        # z = self.get_gaussian(param, loc=2)
+        x = self.get_gaussian_inv(param, loc=0)
+        y = self.get_gaussian_inv(param, loc=1)
+        z = self.get_gaussian_inv(param, loc=2)
+        row1 = torch.cat([z, y, z], dim=2)
+        row2 = torch.cat([y, x, y], dim=2)
+        weight = torch.cat([row1, row2, row1], dim=3)
+
+        return weight
+
+    def get_gaussian(self, a, loc):
+        return 1 / math.sqrt(2 * math.pi) / a * torch.exp(-loc / 2 / a / a)
+
+    def get_gaussian_inv(self, b, loc):
+        return b * torch.exp(-loc * math.pi * b * b)
+
+    def normalize_weight(self, weight):
+        weight_sum = weight.sum(dim=2, keepdim=True).sum(dim=3, keepdim=True)
+        normalized_weight = weight / weight_sum
+        return normalized_weight
+
+    def forward(self, x):
+        weight = self.get_weight(self.param)
+        weight_norm = self.normalize_weight(weight)
+        x = self.reflection_pad(x)
+        x = F.conv2d(x, weight_norm, stride=self.stride, groups=self.groups)
+        return x
+
+
 class SigmaNormBlurPool(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
                  groups=1, bias=False, padding_mode='reflect'):
