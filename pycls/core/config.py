@@ -303,6 +303,11 @@ _C.DATA_LOADER.PIN_MEMORY = True
 _C.DATA_LOADER.DATASET_ENABLE = False
 
 
+# -------------------------------Data Augmentation options ----------------------------#
+_C.DATA_AUG = CfgNode()
+# resize: RandomResizedCrop, center: CenterCrop, augmix: RandomResizedCrop and AugmixDataset()
+_C.DATA_AUG = 'resize'
+
 # ---------------------------------- CUDNN options ----------------------------------- #
 _C.CUDNN = CfgNode()
 

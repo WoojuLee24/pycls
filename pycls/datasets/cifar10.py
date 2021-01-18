@@ -46,7 +46,7 @@ class Cifar10(torch.utils.data.Dataset):
         # Load data batches
         inputs, labels = [], []
         for batch_name in batch_names:
-            batch_path = os.path.join(self._data_path, batch_name)
+            batch_path = os.path.join(self._data_path, "cifar-10-batches-py", batch_name)
             with open(batch_path, "rb") as f:
                 data = pickle.load(f, encoding="bytes")
             inputs.append(data[b"data"])
