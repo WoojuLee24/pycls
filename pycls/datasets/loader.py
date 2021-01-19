@@ -304,3 +304,13 @@ def construct_cifar_c_loader(data_path, split, batch_size, shuffle, drop_last):
         drop_last=drop_last,
     )
     return loader
+
+
+def shuffle(loader, cur_epoch):
+    """"Shuffles the data."""
+    err_str = "Sampler type '{}' not supported".format(type(loader.sampler))
+    assert isinstance(loader.sampler, (RandomSampler, DistributedSampler)), err_str
+    # RandomSampler handles shuffling automatically
+    if isinstance(loader.sampler, DistributedSampler):
+        # DistributedSampler shuffles data based on epoch
+        loader.sampler.set_epoch(cur_epoch)
