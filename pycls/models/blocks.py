@@ -185,6 +185,7 @@ def init_weights(m):
             or isinstance(m, SigmaCenterNormBlurPool) \
             or isinstance(m, SigmaCenterNormBlurPool5x5) \
             or isinstance(m, SigmaNormBlurPool5x5) \
+            or isinstance(m, CustomBlurPool) \
             or isinstance(m, DogBlurPool) \
             or isinstance(m, EndstoppingSlopeTanh2):
         pass

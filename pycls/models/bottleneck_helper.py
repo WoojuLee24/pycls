@@ -168,7 +168,7 @@ class BasicCustomMaxBlurPoolTransform(Module):
             self.a = conv2d(w_in, w_out, 3, stride=1)
             self.a_bn = norm2d(w_out)
             self.a_af = activation()
-            self.max_blur = CustomBlurPool(w_out, w_out, kernel_size=3, stride=stride, groups=w_out)
+            self.max_blur = CustomBlurPool(w_out, w_out, kernel_size=5, stride=stride, groups=w_out)
         else:
             self.a = conv2d(w_in, w_out, 3, stride=stride)
             self.a_bn = norm2d(w_out)

@@ -117,70 +117,35 @@ class CustomBlurPool(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
-        self.reflection_pad = nn.ReflectionPad2d(1)
+        self.reflection_pad = nn.ReflectionPad2d(2)
         self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
-        if kernel_size == 3:
-            self.kernel = self.get_weight3x3(self.param)
-        else:
-            self.kernel = self.get_weight5x5(self.param)
 
-    def get_param(self, in_channels, out_channels, kernel_size, groups, sigma=0.65):
-        param = torch.ones([out_channels, in_channels // groups, 1, 1], dtype=torch.float,
-                            requires_grad=False)
-        param = param.cuda()
-        param = sigma * param
+    def get_param(self, in_channels, out_channels, kernel_size, groups):
+        # kernel = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
+        #                        [-0.23, 0.17, 0.49, 0.17, -0.23],
+        #                        [-0.18, 0.49, 1, 0.49, -0.18],
+        #                        [-0.23, 0.17, 0.49, 0.17, -0.23],
+        #                        [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        # kernel = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
+        #                        [-0.23, 0.17, 0.49, 0.17, -0.23],
+        #                        [-0.18, 0.49, 1, 0.49, -0.18],
+        #                        [-0.23, 0.17, 0.49, 0.17, -0.23],
+        #                        [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        # kernel = torch.tensor([[-1/8, -1/8, -1/8],
+        #                       [-1/8, 1, -1/8],
+        #                       [-1/8, -1/8, -1/8]], requires_grad=False).cuda()
+        kernel = torch.tensor([[0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04],
+                               [0.04, 0.04, 0.04, 0.04, 0.04]], requires_grad=False).cuda()
+        kernel = kernel.repeat((out_channels, in_channels // groups, 1, 1))
 
-        return nn.Parameter(param)
-
-    def get_weight3x3(self, param):
-        x = self.get_gaussian(param, loc=0)
-        y = self.get_gaussian(param, loc=1)
-        z = self.get_gaussian(param, loc=2)
-        row1 = torch.cat([z, y, z], dim=2)
-        row2 = torch.cat([y, x, y], dim=2)
-        weight = torch.cat([row1, row2, row1], dim=3)
-        weight = self.normalize_sum_weight3x3(weight)
-
-        return weight
-
-    def get_weight5x5(self, param):
-        o = self.get_gaussian(param, loc=0)
-        x = self.get_gaussian(param, loc=1)
-        y = self.get_gaussian(param, loc=2)
-        z = self.get_gaussian(param, loc=4)
-        u = self.get_gaussian(param, loc=5)
-        v = self.get_gaussian(param, loc=8)
-        row1 = torch.cat([v, u, z, u, v], dim=2)
-        row2 = torch.cat([u, y, x, y, u], dim=2)
-        row3 = torch.cat([z, x, o, x, z], dim=2)
-        weight = torch.cat([row1, row2, row3, row2, row1], dim=3)
-        weight = self.normalize_sum_weight5x5(weight)
-
-        return weight
-
-    def get_gaussian(self, a, loc):
-        return 1 / math.sqrt(2 * math.pi) / a * torch.exp(-loc / 2 / a / a)
-
-    def normalize_center_weight5x5(self, weight):
-        center = weight[:, :, 2:3, 2:3]
-        center = center.repeat((1, 1, 5, 5))
-        normalized_weight = weight / center
-
-        return normalized_weight
-
-    def normalize_sum_weight5x5(self, weight):
-        weight_sum = weight.sum(dim=2, keepdim=True).sum(dim=3, keepdim=True)
-        normalized_weight = weight / weight_sum
-        return normalized_weight
-
-    def normalize_sum_weight3x3(self, weight):
-        weight_sum = weight.sum(dim=2, keepdim=True).sum(dim=3, keepdim=True)
-        normalized_weight = weight / weight_sum
-        return normalized_weight
+        return kernel
 
     def forward(self, x):
         x = self.reflection_pad(x)
-        x = F.conv2d(x, self.kernel, stride=self.stride, groups=self.groups)
+        x = F.conv2d(x, self.param, stride=self.stride, groups=self.groups)
         return x
 
 
