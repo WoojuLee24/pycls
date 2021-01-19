@@ -244,11 +244,8 @@ def train_model():
     logger.info("Start epoch: {}".format(start_epoch + 1))
     for cur_epoch in range(start_epoch, cfg.OPTIM.MAX_EPOCH):
         last_epoch = cur_epoch + 1 == cfg.OPTIM.MAX_EPOCH
-        if cfg.DATA_LOADER.DATASET_ENABLE:
-            train_epoch_aug(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
-        else:
-            # Train for one epoch
-            train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
+        # Train for one epoch
+        train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
         # Compute precise BN stats
         if cfg.BN.USE_PRECISE_STATS:
             net.compute_precise_bn_stats(model, train_loader)

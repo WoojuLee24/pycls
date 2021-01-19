@@ -152,6 +152,10 @@ def construct_test_loader():
     )
 
 
+def construct_test_shift_loader():
+    """"""
+
+
 def shuffle(loader, cur_epoch):
     """"Shuffles the data."""
     err_str = "Sampler type '{}' not supported".format(type(loader.sampler))

@@ -32,7 +32,7 @@ class Cifar10(torch.utils.data.Dataset):
         splits = ["train", "test"]
         assert split in splits, "Split '{}' not supported for cifar".format(split)
         logger.info("Constructing CIFAR-10 {}...".format(split))
-        self._data_path, self._split = data_path, split
+        self._data_path, self._split = os.path.join(data_path, "cifar-10-batches-py"), split
         self._inputs, self._labels = self._load_data()
 
     def _load_data(self):
