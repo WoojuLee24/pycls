@@ -67,14 +67,20 @@ class ImageNet(torch.utils.data.Dataset):
         """Prepares the image for network input."""
         # Train and test setups differ
         train_size = cfg.TRAIN.IM_SIZE
-        if self._split == "train":
+        test_size = cfg.TRAIN.IM_SIZE if cfg.TEST.DATA_AUG == 'test_shift' else cfg.TEST.IM_SIZE
+        if self._split == "train" and cfg.TRAIN.DATA_AUG == 'random-sized-crop':
             # Scale and aspect ratio then horizontal flip
             im = transforms.random_sized_crop(im=im, size=train_size, area_frac=0.08)
+            im = transforms.horizontal_flip(im=im, p=0.5, order="HWC")
+        elif self._split == "train" and cfg.TRAIN.DATA_AUG == 'center-crop':
+            # Scale and center crop then horizontal flip
+            im = transforms.scale(256, im)
+            im = transforms.center_crop(train_size, im)
             im = transforms.horizontal_flip(im=im, p=0.5, order="HWC")
         else:
             # Scale and center crop
             im = transforms.scale(cfg.TEST.IM_SIZE, im)
-            im = transforms.center_crop(train_size, im)
+            im = transforms.center_crop(test_size, im)
         # HWC -> CHW
         im = im.transpose([2, 0, 1])
         # [0, 255] -> [0, 1]

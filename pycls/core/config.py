@@ -273,6 +273,15 @@ _C.TRAIN.WEIGHTS = ""
 # Color augmentation or not
 _C.TRAIN.COLOR_AUG = True
 
+# Data aug Vgg style
+_C.TRAIN.DATA_AUG = "center-crop"
+
+# Data aug Inception style
+_C.TRAIN.DATA_AUG = "random-sized-crop"
+
+# Data aug Augmix
+_C.TRAIN.DATA_AUG = "augmix"
+
 # --------------------------------- Testing options ---------------------------------- #
 _C.TEST = CfgNode()
 
@@ -288,6 +297,9 @@ _C.TEST.IM_SIZE = 256
 
 # Weights to use for testing
 _C.TEST.WEIGHTS = ""
+
+# Data aug test shift
+_C.TEST.DATA_AUG = "test-shift"
 
 
 # ------------------------------- Data loader options -------------------------------- #
