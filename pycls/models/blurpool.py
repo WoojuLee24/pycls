@@ -276,8 +276,9 @@ class NormalBlurPool(nn.Conv2d):
 
     def get_gaussian_inv(self, a, b, loc):
         # return b * b * torch.exp(-loc * math.pi * b * b)
-        return a * a * torch.exp(-loc * math.pi * b * b)
+        # return a * a * torch.exp(-loc * math.pi * b * b)
         # return b * torch.exp(-loc * math.pi * b * b)
+        return a * torch.exp(-loc * math.pi * b * b)
 
     def forward(self, x):
         weight = self.get_weight(self.param1, self.param2)
