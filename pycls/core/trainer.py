@@ -22,6 +22,7 @@ import pycls.core.optimizer as optim
 import pycls.datasets.loader as loader
 import torch.nn.functional as F
 import torch
+from pycls.core.tester import test_epoch_shift
 from pycls.core.config import cfg
 
 
@@ -252,6 +253,9 @@ def train_model():
         # Evaluate the model
         if (cur_epoch + 1) % cfg.TRAIN.EVAL_PERIOD == 0 or last_epoch:
             test_epoch(test_loader, model, test_meter, cur_epoch)
+        # Evaluate the shift equivariance of the model
+        if (last_epoch - 30) <= (cur_epoch + 1) <= last_epoch:
+            test_epoch_shift(test_loader, model, cur_epoch=0, epochs_shift=5, print_freq=100)
         # Save a checkpoint
         if (cur_epoch + 1) % cfg.TRAIN.CHECKPOINT_PERIOD == 0 or last_epoch:
             file = cp.save_checkpoint(model, optimizer, cur_epoch)
