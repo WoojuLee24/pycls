@@ -311,17 +311,17 @@ class NormalSumBlurPool(nn.Conv2d):
         self.groups = groups
         self.padding = padding
         self.reflection_pad = nn.ReflectionPad2d(2)
-        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
-        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
+        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.140625)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.375)
 
-    def get_param(self, in_channels, out_channels, kernel_size, groups):
+    def get_param(self, in_channels, out_channels, kernel_size, groups, mean):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
                             requires_grad=True)
         param = param.cuda()
         # fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
         # param.data.normal_(mean=0.375, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
-        nn.init.constant_(param, 0.375)
+        nn.init.constant_(param, mean)
         return nn.Parameter(param)
 
     def get_weight(self, param1, param2):
