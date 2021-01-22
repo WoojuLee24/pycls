@@ -179,6 +179,7 @@ def init_weights(m):
             or isinstance(m, CompareFixedHP) \
             or isinstance(m, SigmaBlurPool) \
             or isinstance(m, NormalBlurPool) \
+            or isinstance(m, NormalBlurPool2) \
             or isinstance(m, NormalSumBlurPool) \
             or isinstance(m, NormalCenterBlurPool) \
             or isinstance(m, SigmaNormBlurPool) \

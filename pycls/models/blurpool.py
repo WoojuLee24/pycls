@@ -318,6 +318,7 @@ class NormalBlurPool(nn.Conv2d):
         self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.140625)
         self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.375)
 
+
     def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
                             requires_grad=True)
@@ -349,8 +350,73 @@ class NormalBlurPool(nn.Conv2d):
         # return b * torch.exp(-loc * math.pi * b * b)
         # return a * torch.exp(-loc * math.pi * b * b)
 
+    def get_gaussian_inv2(self, a, b, c, loc):
+        # return b * b * torch.exp(-loc * math.pi * b * b)
+        return a * a * torch.exp(-loc * math.pi * b * b)
+        # return b * torch.exp(-loc * math.pi * b * b)
+        # return a * torch.exp(-loc * math.pi * b * b)
+
     def forward(self, x):
         weight = self.get_weight(self.param1, self.param2)
+        x = self.reflection_pad(x)
+        x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
+        return x
+
+
+class NormalBlurPool2(nn.Conv2d):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
+                 groups=1, bias=False, padding_mode='reflect'):
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
+                         groups=groups, bias=bias, padding_mode=padding_mode)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.groups = groups
+        self.padding = padding
+        self.reflection_pad = nn.ReflectionPad2d(2)
+        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.3989)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.3989)
+        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.7071)
+        self.param4 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.7071)
+
+
+    def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375):
+        param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size], dtype=torch.float,
+                            requires_grad=True)
+        param = param.cuda()
+        # fan_out = kernel_size * kernel_size * out_channels
+        # std = np.sqrt(0.05 / fan_out)
+        # param.data.normal_(mean=mean, std=np.sqrt(0.05 / fan_out))   # 0.2, 0.05
+        nn.init.constant_(param, mean)
+        return nn.Parameter(param)
+
+    def get_weight(self, a, b, c, d):
+        param1 = F.relu(a * b) + F.relu(-a * b)
+        param2 = F.relu(c * d) + F.relu(-c * d)
+        o = self.get_gaussian_inv2(param1, param2, loc=0)
+        x = self.get_gaussian_inv2(param1, param2, loc=1)
+        y = self.get_gaussian_inv2(param1, param2, loc=2)
+        z = self.get_gaussian_inv2(param1, param2, loc=4)
+        u = self.get_gaussian_inv2(param1, param2, loc=5)
+        v = self.get_gaussian_inv2(param1, param2, loc=8)
+        row1 = torch.cat([v, u, z, u, v], dim=2)
+        row2 = torch.cat([u, y, x, y, u], dim=2)
+        row3 = torch.cat([z, x, o, x, z], dim=2)
+        weight = torch.cat([row1, row2, row3, row2, row1], dim=3)
+        return weight
+
+    def get_gaussian_inv(self, a, b, loc):
+        # return b * b * torch.exp(-loc * math.pi * b * b)
+        return a * a * torch.exp(-loc * math.pi * b * b)
+        # return b * torch.exp(-loc * math.pi * b * b)
+        # return a * torch.exp(-loc * math.pi * b * b)
+
+    def get_gaussian_inv2(self, a, b, loc):
+        return a * torch.exp(-loc * b)
+
+    def forward(self, x):
+        weight = self.get_weight(self.param1, self.param2, self.param3, self.param4)
         x = self.reflection_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         return x
