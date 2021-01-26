@@ -212,10 +212,9 @@ class ParamBlurPool3x3(nn.Conv2d):
         self.padding = padding
         self.reflection_pad = nn.ReflectionPad2d(1)
         self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20)
-        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25)
-        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=3)
 
-    def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375):
+    def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375, mul=1):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size], dtype=torch.float, requires_grad=True)
         # param = torch.zeros([out_channels, in_channels // groups, kernel_size, kernel_size],
         #                     dtype=torch.float, requires_grad = True)
@@ -223,6 +222,7 @@ class ParamBlurPool3x3(nn.Conv2d):
         fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
         param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        param *= mul
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
 
