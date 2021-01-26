@@ -161,17 +161,18 @@ class ParamBlurPool(nn.Conv2d):
         self.groups = groups
         self.padding = padding
         self.reflection_pad = nn.ReflectionPad2d(2)
-        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20)
-        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25)
-        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01)
+        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20, mul=1)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=3)
+        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01, mul=5)
 
-    def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375):
+    def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375, mul=1):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size], dtype=torch.float,
                             requires_grad=True)
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
         param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        param *= mul
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
 
