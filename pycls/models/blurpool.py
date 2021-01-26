@@ -273,8 +273,8 @@ class ParamBlurPool3x3(nn.Conv2d):
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
-        # param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
-        param.data.uniform_(0, np.sqrt(6.0 / fan_out))
+        param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        # param.data.uniform_(0, np.sqrt(6.0 / fan_out))
         param *= mul
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
@@ -282,6 +282,8 @@ class ParamBlurPool3x3(nn.Conv2d):
     def get_weight(self, param1, param2):
         param1 = F.relu(param1) + F.relu(param1)
         param2 = (F.relu(param2) + F.relu(param2)) / 3
+        param1 = torch.clamp(param1, min=0.05)
+        param2 = torch.clamp(param2, min=0.05)
         param = torch.cat([param2,
                            param2 + param1,
                            param2], dim=2)
