@@ -274,8 +274,8 @@ class ParamBlurPool3x3(nn.Conv2d):
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
-        param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
-        # param.data.uniform_(0, np.sqrt(6.0 / fan_out))
+        # param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        param.data.uniform_(-np.sqrt(6.0 / fan_out), np.sqrt(6.0 / fan_out))
         param *= mul
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
