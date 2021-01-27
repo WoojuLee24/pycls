@@ -282,8 +282,8 @@ class ParamBlurPool3x3(nn.Conv2d):
     def get_weight(self, param1, param2):
         param1 = F.relu(param1) + F.relu(param1)
         param2 = (F.relu(param2) + F.relu(param2)) / 3
-        param1 = torch.clamp(param1, min=0.01)
-        param2 = torch.clamp(param2, min=0.01)
+        param1 = torch.clamp(param1, min=0.001)
+        param2 = torch.clamp(param2, min=0.001)
         param = torch.cat([param2,
                            param2 + param1,
                            param2], dim=2)
