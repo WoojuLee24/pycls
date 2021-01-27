@@ -149,7 +149,7 @@ class CustomBlurPool(nn.Conv2d):
         return x
 
 
-class ParamBlurPool(nn.Conv2d):
+class SortBlurPool(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
                  groups=1, bias=False, padding_mode='reflect'):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
@@ -162,8 +162,8 @@ class ParamBlurPool(nn.Conv2d):
         self.padding = padding
         self.reflection_pad = nn.ReflectionPad2d(2)
         self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20, mul=1)
-        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=3)
-        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01, mul=5)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=1)
+        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01, mul=1)
 
     def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375, mul=1):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size], dtype=torch.float,
@@ -171,21 +171,20 @@ class ParamBlurPool(nn.Conv2d):
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
-        param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        # param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        param.data.uniform_(0, np.sqrt(6.0 / fan_out))
         param *= mul
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
 
     def get_weight(self, param1, param2, param3):
         param1 = F.relu(param1) + F.relu(param1)
-        param2 = (F.relu(param2) + F.relu(param2)) / 3
-        param3 = (F.relu(param3) + F.relu(param3)) / 5
-        param = torch.cat([param3,
-                           param3 + param2,
-                           param3 + param2 + param1,
-                           param3 + param2,
-                           param3], dim=2)
-        param = torch.einsum('bci,bcj->bcij', param, param)
+        param2 = (F.relu(param2) + F.relu(param2))
+        param3 = (F.relu(param3) + F.relu(param3))
+        param = torch.cat([param1, param2, param3], dim=2)
+        param_descend, _ = torch.sort(param, dim=2, descending=True)
+        param_ascend, _ = torch.sort(param, dim=2, descending=False)
+        param = torch.cat([param_ascend, param_descend], dim=2)
 
         return param
 
@@ -265,6 +264,8 @@ class ParamBlurPool3x3(nn.Conv2d):
         self.reflection_pad = nn.ReflectionPad2d(1)
         self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20)
         self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=3)
+        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20)
+        self.param4 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=3)
 
     def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375, mul=1):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size], dtype=torch.float, requires_grad=True)
@@ -273,26 +274,42 @@ class ParamBlurPool3x3(nn.Conv2d):
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
-        param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
-        # param.data.uniform_(0, np.sqrt(6.0 / fan_out))
+        # param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        param.data.uniform_(0, np.sqrt(6.0 / fan_out))
         param *= mul
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
 
-    def get_weight(self, param1, param2):
+    def get_weight1(self, param1, param2):
         param1 = F.relu(param1) + F.relu(param1)
         param2 = (F.relu(param2) + F.relu(param2)) / 3
-        param1 = torch.clamp(param1, min=0.0001)
-        param2 = torch.clamp(param2, min=0.0001)
+        # param1 = torch.clamp(param1, min=0.0001)
+        # param2 = torch.clamp(param2, min=0.0001)
         param = torch.cat([param2,
                            param2 + param1,
                            param2], dim=2)
         param = torch.einsum('bci,bcj->bcij', param, param)
+
+        return param
+
+    def get_weight(self, param1, param2, param3, param4, eps=1e-5):
+        param1 = F.relu(param1) + F.relu(param1)
+        param2 = (F.relu(param2) + F.relu(param2)) / 3
+        param3 = F.relu(param3) + F.relu(param3)
+        param4 = (F.relu(param4) + F.relu(param4)) / 3
+        param12 = torch.cat([param2,
+                             param2 + param1,
+                             param2], dim=2)
+        param34 = torch.cat([param4,
+                             param4 + param3,
+                             param4], dim=2)
+        param = torch.einsum('bci,bcj->bcij', param12, param34)
+
         return param
 
 
     def forward(self, x):
-        weight = self.get_weight(self.param1, self.param2)
+        weight = self.get_weight(self.param1, self.param2, self.param3, self.param4)
         x = self.reflection_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         return x
