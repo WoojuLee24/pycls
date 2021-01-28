@@ -161,9 +161,11 @@ class SortBlurPool(nn.Conv2d):
         self.groups = groups
         self.padding = padding
         self.reflection_pad = nn.ReflectionPad2d(2)
-        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20, mul=1)
-        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=1)
-        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01, mul=1)
+        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20, mul=0.5)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=0.5)
+        self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01, mul=0.5)
+        # self.param4= self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01, mul=1)
+        # self.param5 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.01, mul=1)
 
     def get_param(self, in_channels, out_channels, kernel_size, groups, mean=0.375, mul=1):
         param = torch.zeros([out_channels, in_channels // groups, kernel_size], dtype=torch.float,
@@ -183,18 +185,28 @@ class SortBlurPool(nn.Conv2d):
         param3 = (F.relu(param3) + F.relu(param3))
         param = torch.cat([param1, param2, param3], dim=2)
         param_descend, _ = torch.sort(param, dim=2, descending=True)
+        param_descend[:, :, 0] = param_descend[:, :, 0] * 2
         param_ascend, _ = torch.sort(param, dim=2, descending=False)
         param = torch.cat([param_ascend[:, :, :2], param_descend], dim=2)
         param = torch.einsum('bci,bcj->bcij', param, param)
 
         return param
 
-    def get_weight_2d(self, param1, param2, param3):
-        param = F.relu(param1) + F.relu(param1)
+    def get_weight_2d(self, param1, param2, param3, param4, param5):
+        param1 = F.relu(param1) + F.relu(param1)
+        param2 = (F.relu(param2) + F.relu(param2))
+        param3 = (F.relu(param3) + F.relu(param3))
+        param4 = (F.relu(param4) + F.relu(param4))
+        param5 = (F.relu(param5) + F.relu(param5))
+        param = torch.cat([param1, param2, param3, param4, param5], dim=2)
+        param_ascend, ind = torch.sort(param, dim=2, descending=False)
+        param_sorted = param_ascend.scatter_(dim=-1, index=ind, src=param_ascend)
+
         return param
 
     def forward(self, x):
         weight = self.get_weight(self.param1, self.param2, self.param3)
+        # weight = self.get_weight_2d(self.param1, self.param2, self.param3, self.param4, self.param5)
         x = self.reflection_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         return x
