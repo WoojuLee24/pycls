@@ -139,14 +139,14 @@ class ResBasicMaxBlurPoolBlock(Module):
         super(ResBasicMaxBlurPoolBlock, self).__init__()
         self.proj, self.bn = None, None
         if (w_in != w_out) or (stride != 1):
+            self.proj_blur = BlurPool(w_in, filt_size=3, stride=stride)
             self.proj = conv2d(w_in, w_out, 1, stride=1)
-            self.proj_blur = BlurPool(w_out, filt_size=3, stride=stride)
             self.bn = norm2d(w_out)
         self.f = BasicMaxBlurPoolTransform(w_in, w_out, stride, params)
         self.af = activation()
 
     def forward(self, x):
-        x_p = self.bn(self.proj_blur(self.proj(x))) if self.proj else x
+        x_p = self.bn(self.proj(self.proj_blur((x)))) if self.proj else x
         return self.af(x_p + self.f(x))
 
     @staticmethod
@@ -379,9 +379,9 @@ class ResParamMaxBlurPoolBlock(Module):
         super(ResParamMaxBlurPoolBlock, self).__init__()
         self.proj, self.bn = None, None
         if (w_in != w_out) or (stride != 1):
+            self.proj_blur = ParamBlurPool3x3(w_in, w_in, stride=stride)
             self.proj = conv2d(w_in, w_out, 1, stride=1)
             # self.proj_blur = ParamBlurPool3x3(w_out, w_out, stride=stride)
-            self.proj_blur = ParamBlurPool3x3(w_out, w_out, stride=stride, groups=w_out)
             # self.proj_blur = ParamBlurPool(w_out, w_out, stride=stride)
             # self.proj_blur = ParamBlurPool3x3_2d(w_out, w_out, stride=stride)
             self.bn = norm2d(w_out)
@@ -389,7 +389,7 @@ class ResParamMaxBlurPoolBlock(Module):
         self.af = activation()
 
     def forward(self, x):
-        x_p = self.bn(self.proj_blur(self.proj(x))) if self.proj else x
+        x_p = self.bn(self.proj(self.proj_blur(x))) if self.proj else x
         return self.af(x_p + self.f(x))
 
     @staticmethod
