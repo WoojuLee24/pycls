@@ -171,8 +171,8 @@ class SortBlurPool(nn.Conv2d):
         param = param.cuda()
         fan_out = kernel_size * kernel_size * out_channels
         # std = np.sqrt(0.05 / fan_out)
-        # param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
-        param.data.uniform_(0, np.sqrt(6.0 / fan_out))
+        param.data.normal_(mean=0, std=np.sqrt(2.0 / fan_out))   # 0.2, 0.05
+        # param.data.uniform_(0, np.sqrt(6.0 / fan_out))
         param *= mul
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
@@ -184,7 +184,8 @@ class SortBlurPool(nn.Conv2d):
         param = torch.cat([param1, param2, param3], dim=2)
         param_descend, _ = torch.sort(param, dim=2, descending=True)
         param_ascend, _ = torch.sort(param, dim=2, descending=False)
-        param = torch.cat([param_ascend, param_descend], dim=2)
+        param = torch.cat([param_ascend[:, :, :2], param_descend], dim=2)
+        param = torch.einsum('bci,bcj->bcij', param, param)
 
         return param
 
