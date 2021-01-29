@@ -188,6 +188,8 @@ class TestMeter(object):
         # Min errors (over the full test set)
         self.min_top1_err = 100.0
         self.min_top5_err = 100.0
+        # Max consistency
+        self.max_consist = 0.0
         # Number of misclassified examples
         self.num_top1_mis = 0
         self.num_top5_mis = 0
@@ -203,6 +205,7 @@ class TestMeter(object):
         self.num_top1_mis = 0
         self.num_top5_mis = 0
         self.num_samples = 0
+        self.max_consist = 0.0
 
     def iter_tic(self):
         self.iter_timer.tic()
@@ -255,4 +258,13 @@ class TestMeter(object):
 
     def log_epoch_stats(self, cur_epoch):
         stats = self.get_epoch_stats(cur_epoch)
+        logger.info(logging.dump_log_data(stats, "test_epoch"))
+
+    def get_consistency_stats(self, cur_epoch, consist):
+        self.max_consist = max(self.max_consist, consist)
+        stats = {
+            "epoch": "{}/{}".format(cur_epoch + 1, cfg.OPTIM.MAX_EPOCH),
+            "consistency": consist,
+            "max_consistency": self.max_consist,
+        }
         logger.info(logging.dump_log_data(stats, "test_epoch"))

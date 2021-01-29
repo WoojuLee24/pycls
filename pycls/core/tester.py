@@ -125,42 +125,44 @@ def test_epoch_imagenet_a(test_loader, model, test_meter, cur_epoch):
 
 
 @torch.no_grad()
-def test_epoch_shift(test_loader, model, cur_epoch, epochs_shift=5, print_freq=100):
+def test_epoch_shift(test_loader, model, epochs_shift=5, print_freq=100):
     """Evaluates the model on the test set."""
     # Enable eval mode
     model.eval()
     batch_time = AverageMeter()
     consist = AverageMeter()
-    end = time.time()
+    with torch.no_grad():
+        end = time.time()
+        shift_size = 32 if cfg.TEST.DATASET == "imagenet" else 8
+        img_size = 224 if cfg.TEST.DATASET == "imagenet" else 24
+        for cur_epoch in range(epochs_shift):
+            for cur_iter, (inputs, labels) in enumerate(test_loader):
+                # Transfer the data to the current GPU device
+                inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
+                # Shift the input
+                off0 = np.random.randint(shift_size, size=2)
+                off1 = np.random.randint(shift_size, size=2)
+                # Compute the predictions
+                output0 = model(inputs[:, :, off0[0]:off0[0] + img_size, off0[1]:off0[1] + img_size])
+                output1 = model(inputs[:, :, off1[0]:off1[0] + img_size, off1[1]:off1[1] + img_size])
+                # Compute the shift consistency
+                cur_agree = agreement(output0, output1).type(torch.FloatTensor).to(output0.device)
+                # measure agreement and record
+                consist.update(cur_agree.item(), inputs.size(0))
+                # measure elapsed time
+                batch_time.update(time.time() - end)
+                end = time.time()
+                if cur_iter % print_freq == 0:
+                    print('Ep [{0}/{1}]:\t'
+                          'Test: [{2}/{3}]\t'
+                          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                          'Consist {consist.val:.4f} ({consist.avg:.4f})\t'.format(
+                        cur_epoch, epochs_shift, cur_iter, len(test_loader), batch_time=batch_time, consist=consist))
 
-    shift_size = 32 if cfg.TEST.DATASET == "imagenet" else 8
-    img_size = 224 if cfg.TEST.DATASET == "imagenet" else 24
-    for cur_iter, (inputs, labels) in enumerate(test_loader):
-        # Transfer the data to the current GPU device
-        inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
-        input_size = inputs.size()
-        # Shift the input
-        off0 = np.random.randint(shift_size, size=2)
-        off1 = np.random.randint(shift_size, size=2)
-        # Compute the predictions
-        output0 = model(inputs[:, :, off0[0]:off0[0] + img_size, off0[1]:off0[1] + img_size])
-        output1 = model(inputs[:, :, off1[0]:off1[0] + img_size, off1[1]:off1[1] + img_size])
-        # Compute the shift consistency
-        cur_agree = agreement(output0, output1).type(torch.FloatTensor).to(output0.device)
-        # measure agreement and record
-        consist.update(cur_agree.item(), inputs.size(0))
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        if cur_iter % print_freq == 0:
-            print('Ep [{0}/{1}]:\t'
-                  'Test: [{2}/{3}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Consist {consist.val:.4f} ({consist.avg:.4f})\t'.format(
-                cur_epoch, epochs_shift, cur_iter, len(test_loader), batch_time=batch_time, consist=consist))
+        print(' * Consistency {consist.avg:.3f}'
+              .format(consist=consist))
 
-    print(' * Consistency {consist.avg:.3f}'
-          .format(consist=consist))
-    return ' * Consistency {consist.avg:.3f}'.format(consist=consist)
+    return consist.avg
 
 
 def validate_shift(val_loader, model, args):
