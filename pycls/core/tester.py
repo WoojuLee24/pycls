@@ -160,6 +160,7 @@ def test_epoch_shift(test_loader, model, cur_epoch, epochs_shift=5, print_freq=1
 
     print(' * Consistency {consist.avg:.3f}'
           .format(consist=consist))
+    return ' * Consistency {consist.avg:.3f}'.format(consist=consist)
 
 
 def validate_shift(val_loader, model, args):
