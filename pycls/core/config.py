@@ -245,6 +245,12 @@ _C.OPTIM.WARMUP_FACTOR = 0.1
 _C.OPTIM.WARMUP_EPOCHS = 0
 
 
+# -------------------------------- Blur options --------------------------------- #
+_C.BLUR = CfgNode()
+_C.BLUR.SIGMA = 0.8
+_C.BLUR.KERNEL_SIZE = 3
+_C.BLUR.KERNEL_NORM = True
+
 # --------------------------------- Training options --------------------------------- #
 _C.TRAIN = CfgNode()
 

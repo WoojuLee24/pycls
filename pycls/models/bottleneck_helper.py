@@ -169,7 +169,8 @@ class BasicCustomMaxBlurPoolTransform(Module):
             self.a = conv2d(w_in, w_out, 3, stride=1)
             self.a_bn = norm2d(w_out)
             self.a_af = activation()
-            self.max_blur = CustomBlurPool(w_out, w_out, kernel_size=5, stride=stride, groups=w_out)
+            self.max_blur = CustomBlurPool(w_out, w_out, kernel_size=cfg.BLUR.KERNEL_SIZE,
+                                           stride=stride, groups=w_out, sigma=cfg.BLUR.SIGMA)
         else:
             self.a = conv2d(w_in, w_out, 3, stride=stride)
             self.a_bn = norm2d(w_out)
@@ -199,13 +200,15 @@ class ResBasicCustomMaxBlurPoolBlock(Module):
         super(ResBasicCustomMaxBlurPoolBlock, self).__init__()
         self.proj, self.bn = None, None
         if (w_in != w_out) or (stride != 1):
-            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.proj_blur = CustomBlurPool(w_in, w_in, kernel_size=cfg.BLUR.KERNEL_SIZE,
+                                            stride=stride, groups=w_in, sigma=cfg.BLUR.SIGMA)
+            self.proj = conv2d(w_in, w_out, 1, stride=1)
             self.bn = norm2d(w_out)
         self.f = BasicCustomMaxBlurPoolTransform(w_in, w_out, stride, params)
         self.af = activation()
 
     def forward(self, x):
-        x_p = self.bn(self.proj(x)) if self.proj else x
+        x_p = self.bn(self.proj(self.proj_blur(x))) if self.proj else x
         return self.af(x_p + self.f(x))
 
     @staticmethod
