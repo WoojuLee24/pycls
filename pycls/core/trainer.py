@@ -254,8 +254,8 @@ def train_model():
         if (cur_epoch + 1) % cfg.TRAIN.EVAL_PERIOD == 0 or last_epoch:
             test_epoch(test_loader, model, test_meter, cur_epoch)
         # Evaluate the shift equivariance of the model
-        if (0) <= (cur_epoch + 1) <= cfg.OPTIM.MAX_EPOCH:
-        # if (cfg.OPTIM.MAX_EPOCH - 20) <= (cur_epoch + 1) <= cfg.OPTIM.MAX_EPOCH:
+        # if (0) <= (cur_epoch + 1) <= cfg.OPTIM.MAX_EPOCH:
+        if (cfg.OPTIM.MAX_EPOCH - 20) <= (cur_epoch + 1) <= cfg.OPTIM.MAX_EPOCH:
             consist = test_epoch_shift(test_loader, model, epochs_shift=5, print_freq=100)
             test_meter.get_consistency_stats(cur_epoch, consist)
             test_meter.reset()
