@@ -1659,13 +1659,14 @@ class ResMaxBlurPoolBottleneckBlock(Module):
         super(ResMaxBlurPoolBottleneckBlock, self).__init__()
         self.proj, self.bn = None, None
         if (w_in != w_out) or (stride != 1):
-            self.proj = conv2d(w_in, w_out, 1, stride=stride)
+            self.proj_blur = BlurPool(w_in, filt_size=3, stride=stride)
+            self.proj = conv2d(w_in, w_out, 1, stride=1)
             self.bn = norm2d(w_out)
         self.f = MaxBlurPoolBottleneckTransform(w_in, w_out, stride, params)
         self.af = activation()
 
     def forward(self, x):
-        x_p = self.bn(self.proj(x)) if self.proj else x
+        x_p = self.bn(self.proj(self.proj_blur(x))) if self.proj else x
         return self.af(x_p + self.f(x))
 
     @staticmethod

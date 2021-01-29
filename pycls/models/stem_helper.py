@@ -19,6 +19,7 @@ from torch.nn import Module
 from pycls.models.endstop_helper import *
 from pycls.models.blurpool import *
 from pycls.models.kernel_helper import *
+from pycls.models.stochastic_helper import *
 
 class ResStemCifar(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
@@ -32,6 +33,29 @@ class ResStemCifar(Module):
     def forward(self, x):
         for layer in self.children():
             x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResStemCifarSub(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarSub, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
         return x
 
     @staticmethod
@@ -1068,9 +1092,8 @@ class ResStemMaxBlurPool(Module):
         self.conv = conv2d(w_in, w_out, 7, stride=1)
         self.bn = norm2d(w_out)
         self.af = activation()
-        self.max_blur1 = BlurPool(w_out, filt_size=3, stride=2)
         self.pool = pool2d(w_out, 3, stride=1)
-        self.max_blur2 = BlurPool(w_out, filt_size=3, stride=2)
+        self.max_blur = BlurPool(w_out, filt_size=3, stride=2)
 
     def forward(self, x):
         for layer in self.children():
