@@ -94,6 +94,7 @@ def get_block_fun(block_type):
         "res_sigma_max_blur_pool_block": ResSigmaMaxBlurPoolBlock,
         "res_normal_max_blur_pool_block": ResNormalMaxBlurPoolBlock,
         "res_param_max_blur_pool_block": ResParamMaxBlurPoolBlock,
+        "res_param_max_blur_pool_group_block": ResParamMaxBlurPoolGroupBlock,
         "res_sort_max_blur_pool_block": ResSortMaxBlurPoolBlock,
         "res_normal_center_max_blur_pool_block": ResNormalCenterMaxBlurPoolBlock,
         "res_normal_sum_max_blur_pool_block": ResNormalSumMaxBlurPoolBlock,

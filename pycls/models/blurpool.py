@@ -322,6 +322,12 @@ class ParamBlurPool3x3(nn.Conv2d):
         # nn.init.constant_(param, mean)
         return nn.Parameter(param)
 
+    def get_norm(self, weight, eps=1e-10):
+        weight_sum = weight.sum(dim=2, keepdim=True).sum(dim=3, keepdim=True)
+        normalized_weight = weight / (weight_sum + eps)
+        return normalized_weight
+
+
     def get_weight(self, param1, param2):
         param1 = F.relu(param1) + F.relu(param1)
         param2 = (F.relu(param2) + F.relu(param2)) / 3
@@ -377,6 +383,8 @@ class ParamBlurPool3x3(nn.Conv2d):
     def forward(self, x):
         weight = self.get_weight4(self.param1, self.param2)
         x = self.reflection_pad(x)
+        if self.groups == self.in_channels:
+            weight = self.get_norm(weight)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         return x
 
