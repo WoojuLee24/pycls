@@ -349,9 +349,33 @@ class ParamBlurPool3x3(nn.Conv2d):
 
         return param
 
+    def get_weight3(self, param1, param2):
+        "relu activation"
+        param1 = F.relu(param1)
+        param2 = (F.relu(param2) / 3)
+        # param1 = torch.clamp(param1, min=0.0001)
+        # param2 = torch.clamp(param2, min=0.0001)
+        param = torch.cat([param2,
+                           param2 + param1,
+                           param2], dim=2)
+        param = torch.einsum('bci,bcj->bcij', param, param)
+
+        return param
+
+    def get_weight4(self, param1, param2):
+        param1 = F.sigmoid(param1)
+        param2 = F.sigmoid(param2 / 3)
+        # param1 = torch.clamp(param1, min=0.0001)
+        # param2 = torch.clamp(param2, min=0.0001)
+        param = torch.cat([param2,
+                           param2 + param1,
+                           param2], dim=2)
+        param = torch.einsum('bci,bcj->bcij', param, param)
+
+        return param
 
     def forward(self, x):
-        weight = self.get_weight(self.param1, self.param2)
+        weight = self.get_weight4(self.param1, self.param2)
         x = self.reflection_pad(x)
         x = F.conv2d(x, weight, stride=self.stride, groups=self.groups)
         return x
