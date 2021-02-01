@@ -351,7 +351,7 @@ class ParamMaxBlurPoolTransform(Module):
             self.a_bn = norm2d(w_out)
             self.a_af = activation()
             # self.max_blur = ParamBlurPool3x3(w_out, w_out, stride=stride)
-            self.max_blur = ParamBlurPool3x3(w_out, w_out, stride=stride, groups=w_out)
+            self.max_blur = ParamBlurPool3x3(w_out, w_out, stride=stride)
             # self.max_blur = ParamBlurPool3x3_2d(w_out, w_out, stride=stride)
         else:
             self.a = conv2d(w_in, w_out, 3, stride=stride)
