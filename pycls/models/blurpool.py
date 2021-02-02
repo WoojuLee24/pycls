@@ -391,8 +391,18 @@ class ParamBlurPool3x3(nn.Conv2d):
 
         return param
 
+    def get_weight6(self, param1, param2):
+        param1 = (torch.tanh(param1) + 1) / 2
+        param2 = (torch.tanh(param2 / 3) + 1) / 2
+        param = torch.cat([param2,
+                           param2 + param1,
+                           param2], dim=2)
+        param = torch.einsum('bci,bcj->bcij', param, param)
+
+        return param
+
     def forward(self, x):
-        weight = self.get_weight5(self.param1, self.param2)
+        weight = self.get_weight6(self.param1, self.param2)
         x = self.reflection_pad(x)
         if self.groups == self.in_channels:
             weight = self.get_norm(weight)
