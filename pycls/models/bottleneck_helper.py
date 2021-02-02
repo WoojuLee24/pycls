@@ -1682,11 +1682,12 @@ class MaxBlurPoolBottleneckTransform(Module):
         self.a = conv2d(w_in, w_b, 1)
         self.a_bn = norm2d(w_b)
         self.a_af = activation()
-        if stride!=1:
+        if stride != 1:
             self.b = conv2d(w_b, w_b, 3, stride=1, groups=groups)
             self.b_bn = norm2d(w_b)
             self.b_af = activation()
             self.max_blur = BlurPool(w_b, filt_size=3, stride=stride)
+            # self.max_blur = BlurPool2(w_b, w_b, kernel_size=3, stride=stride, groups=w_b)
         else:
             self.b = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
             self.b_bn = norm2d(w_b)
@@ -1725,6 +1726,7 @@ class ResMaxBlurPoolBottleneckBlock(Module):
         self.proj, self.bn = None, None
         if (w_in != w_out) or (stride != 1):
             self.proj_blur = BlurPool(w_in, filt_size=3, stride=stride)
+            # self.proj_blur = self.max_blur = BlurPool2(w_in, w_in, kernel_size=3, stride=stride, groups=w_in)
             self.proj = conv2d(w_in, w_out, 1, stride=1)
             self.bn = norm2d(w_out)
         self.f = MaxBlurPoolBottleneckTransform(w_in, w_out, stride, params)
@@ -1760,6 +1762,99 @@ class ResMaxBlurPoolBottleneckBlock(Module):
             "se_r": cfg.ANYNET.SE_R if cfg.ANYNET.SE_ON else 0,
             "num_classes": cfg.MODEL.NUM_CLASSES,
         }
+
+
+class MaxParamBlurPoolBottleneckTransform(Module):
+    """Bottleneck transformation: 1x1, 3x3 [+SE], 1x1."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(MaxParamBlurPoolBottleneckTransform, self).__init__()
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        self.a = conv2d(w_in, w_b, 1)
+        self.a_bn = norm2d(w_b)
+        self.a_af = activation()
+        if stride != 1:
+            self.b = conv2d(w_b, w_b, 3, stride=1, groups=groups)
+            self.b_bn = norm2d(w_b)
+            self.b_af = activation()
+            # self.max_blur = BlurPool(w_b, filt_size=3, stride=stride)
+            self.max_blur = BlurPool2(w_b, w_b, kernel_size=3, stride=stride, groups=w_b)
+        else:
+            self.b = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
+            self.b_bn = norm2d(w_b)
+            self.b_af = activation()
+
+        self.se = SE(w_b, w_se) if w_se else None
+        self.c = conv2d(w_b, w_out, 1)
+        self.c_bn = norm2d(w_out)
+        self.c_bn.final_bn = True
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        w_b = int(round(w_out * params["bot_mul"]))
+        w_se = int(round(w_in * params["se_r"]))
+        groups = w_b // params["group_w"]
+        cx = conv2d_cx(cx, w_in, w_b, 1)
+        cx = norm2d_cx(cx, w_b)
+        cx = conv2d_cx(cx, w_b, w_b, 3, stride=stride, groups=groups)
+        cx = norm2d_cx(cx, w_b)
+        cx = SE.complexity(cx, w_b, w_se) if w_se else cx
+        cx = conv2d_cx(cx, w_b, w_out, 1)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResMaxParamBlurPoolBottleneckBlock(Module):
+    """Residual bottleneck block: x + f(x), f = bottleneck transform."""
+
+    def __init__(self, w_in, w_out, stride, params):
+        super(ResMaxParamBlurPoolBottleneckBlock, self).__init__()
+        self.proj, self.bn = None, None
+        if (w_in != w_out) or (stride != 1):
+            self.proj_blur = ParamBlurPool3x3(w_in, w_in, kernel_size=3, stride=stride, groups=w_in)
+            self.proj = conv2d(w_in, w_out, 1, stride=1)
+            self.bn = norm2d(w_out)
+        self.f = MaxParamBlurPoolBottleneckTransform(w_in, w_out, stride, params)
+        self.af = activation()
+
+    def forward(self, x):
+        x_p = self.bn(self.proj(self.proj_blur(x))) if self.proj else x
+        return self.af(x_p + self.f(x))
+
+    @staticmethod
+    def complexity(cx, w_in, w_out, stride, params):
+        if (w_in != w_out) or (stride != 1):
+            h, w = cx["h"], cx["w"]
+            cx = conv2d_cx(cx, w_in, w_out, 1, stride=stride)
+            cx = norm2d_cx(cx, w_out)
+            cx["h"], cx["w"] = h, w
+        cx = BottleneckTransform.complexity(cx, w_in, w_out, stride, params)
+        return cx
+
+
+    @staticmethod
+    def get_params():
+        nones = [None for _ in cfg.ANYNET.DEPTHS]
+        return {
+            "stem_type": cfg.ANYNET.STEM_TYPE,
+            "stem_w": cfg.ANYNET.STEM_W,
+            "block_type": cfg.ANYNET.BLOCK_TYPE,
+            "depths": cfg.ANYNET.DEPTHS,
+            "widths": cfg.ANYNET.WIDTHS,
+            "strides": cfg.ANYNET.STRIDES,
+            "bot_muls": cfg.ANYNET.BOT_MULS if cfg.ANYNET.BOT_MULS else nones,
+            "group_ws": cfg.ANYNET.GROUP_WS if cfg.ANYNET.GROUP_WS else nones,
+            "se_r": cfg.ANYNET.SE_R if cfg.ANYNET.SE_ON else 0,
+            "num_classes": cfg.MODEL.NUM_CLASSES,
+        }
+
 
 
 class ResBottleneckBlockEndProj(Module):

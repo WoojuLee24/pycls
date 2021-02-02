@@ -1094,6 +1094,32 @@ class ResStemMaxBlurPool(Module):
         self.af = activation()
         self.pool = pool2d(w_out, 3, stride=1)
         self.max_blur = BlurPool(w_out, filt_size=3, stride=2)
+        # self.max_blur = BlurPool2(w_out, w_out, kernel_size=3, stride=2, groups=w_out)
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
+class ResStemMaxParamBlurPool(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemMaxParamBlurPool, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=1)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.pool = pool2d(w_out, 3, stride=1)
+        # self.max_blur = BlurPool2(w_out, w_out, kernel_size=3, stride=2, groups=w_out)
+        self.max_blur = ParamBlurPool3x3(w_out, w_out, kernel_size=3, stride=2, groups=w_out)
 
     def forward(self, x):
         for layer in self.children():

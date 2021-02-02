@@ -29,13 +29,13 @@ class BlurPool(nn.Module):
             a = np.array([1., 1.])
         elif(self.filt_size==3):
             a = np.array([1., 2., 1.])
-        elif(self.filt_size==4):    
+        elif(self.filt_size==4):
             a = np.array([1., 3., 3., 1.])
-        elif(self.filt_size==5):    
+        elif(self.filt_size==5):
             a = np.array([1., 4., 6., 4., 1.])
-        elif(self.filt_size==6):    
+        elif(self.filt_size==6):
             a = np.array([1., 5., 10., 10., 5., 1.])
-        elif(self.filt_size==7):    
+        elif(self.filt_size==7):
             a = np.array([1., 6., 15., 20., 15., 6., 1.])
 
         filt = torch.Tensor(a[:,None]*a[None,:])
@@ -47,7 +47,7 @@ class BlurPool(nn.Module):
     def forward(self, inp):
         if(self.filt_size==1):
             if(self.pad_off==0):
-                return inp[:,:,::self.stride,::self.stride]    
+                return inp[:,:,::self.stride,::self.stride]
             else:
                 return self.pad(inp)[:,:,::self.stride,::self.stride]
         else:
@@ -66,7 +66,7 @@ def get_pad_layer(pad_type):
     return PadLayer
 
 
-class DogBlurPool(nn.Conv2d):
+class BlurPool2(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=2, dilation=1,
                  groups=1, bias=False, padding_mode='reflect'):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation,
@@ -77,7 +77,7 @@ class DogBlurPool(nn.Conv2d):
         self.stride = stride
         self.groups = groups
         self.padding = padding
-        self.reflection_pad = nn.ReflectionPad2d(2)
+        self.reflection_pad = nn.ReflectionPad2d(1)
         self.param = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups)
 
 
@@ -87,15 +87,20 @@ class DogBlurPool(nn.Conv2d):
         #                        [-0.18, 0.49, 1, 0.49, -0.18],
         #                        [-0.23, 0.17, 0.49, 0.17, -0.23],
         #                        [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
-        kernel = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
-                               [-0.23, 0.17, 0.49, 0.17, -0.23],
-                               [-0.18, 0.49, 1, 0.49, -0.18],
-                               [-0.23, 0.17, 0.49, 0.17, -0.23],
-                               [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
+        # kernel = torch.tensor([[-0.27, -0.23, -0.18, -0.23, -0.27],
+        #                        [-0.23, 0.17, 0.49, 0.17, -0.23],
+        #                        [-0.18, 0.49, 1, 0.49, -0.18],
+        #                        [-0.23, 0.17, 0.49, 0.17, -0.23],
+        #                        [-0.27, -0.23, -0.18, -0.23, -0.27]], requires_grad=False).cuda()
         # kernel = torch.tensor([[-1/8, -1/8, -1/8],
         #                       [-1/8, 1, -1/8],
         #                       [-1/8, -1/8, -1/8]], requires_grad=False).cuda()
-        kernel = kernel.repeat((out_channels, in_channels//groups, 1, 1))
+        kernel = torch.tensor([1., 2., 1.], requires_grad=False).cuda()
+        # kernel = torch.ger(kernel, kernel)
+        kernel = kernel.repeat((out_channels, in_channels//groups, 1))
+        kernel = torch.einsum('bci,bcj->bcij', kernel, kernel)
+        kernel_sum = kernel.sum(dim=3, keepdim=True).sum(dim=2, keepdim=True)
+        kernel = kernel / kernel_sum
 
         return kernel
 
