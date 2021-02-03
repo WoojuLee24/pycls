@@ -513,7 +513,7 @@ class ParamBlurPool3x3_cross(nn.Conv2d):
         return param
 
     def forward(self, x):
-        weight = self.get_weight(self.param1, self.param2)
+        weight = self.get_weight(self.param1, self.param2, self.param3, self.param4)
         x = self.reflection_pad(x)
         if self.groups == self.in_channels:
             weight = self.get_norm(weight)
