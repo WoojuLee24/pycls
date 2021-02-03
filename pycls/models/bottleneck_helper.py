@@ -415,8 +415,8 @@ class ParamMaxBlurPoolGroupTransform(Module):
             self.a = conv2d(w_in, w_out, 3, stride=1)
             self.a_bn = norm2d(w_out)
             self.a_af = activation()
-            self.max_blur = ParamBlurPool3x3(w_out, w_out, stride=stride, groups=w_out)
-            # self.max_blur = ParamBlurPool3x3_cross(w_out, w_out, stride=stride, groups=w_out)
+            # self.max_blur = ParamBlurPool3x3(w_out, w_out, stride=stride, groups=w_out)
+            self.max_blur = ParamBlurPool3x3_cross(w_out, w_out, stride=stride, groups=w_out)
         else:
             self.a = conv2d(w_in, w_out, 3, stride=stride)
             self.a_bn = norm2d(w_out)
@@ -446,9 +446,9 @@ class ResParamMaxBlurPoolGroupBlock(Module):
         super(ResParamMaxBlurPoolGroupBlock, self).__init__()
         self.proj, self.bn = None, None
         if (w_in != w_out) or (stride != 1):
-            self.proj_blur = ParamBlurPool3x3(w_in, w_in, stride=stride, groups=w_in)
+            # self.proj_blur = ParamBlurPool3x3(w_in, w_in, stride=stride, groups=w_in)
+            self.proj_blur = ParamBlurPool3x3_cross(w_in, w_in, stride=stride, groups=w_in)
             self.proj = conv2d(w_in, w_out, 1, stride=1)
-            # self.proj_blur = ParamBlurPool3x3_cross(w_in, w_in, stride=stride, groups=w_in)
             self.bn = norm2d(w_out)
         self.f = ParamMaxBlurPoolGroupTransform(w_in, w_out, stride, params)
         self.af = activation()
