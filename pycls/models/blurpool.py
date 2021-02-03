@@ -452,10 +452,10 @@ class ParamBlurPool3x3_cross(nn.Conv2d):
         return normalized_weight
 
     def get_weight(self, param1, param2, param3, param4):
-        param1 = F.relu(param1) + F.relu(param1)
-        param2 = (F.relu(param2) + F.relu(param2)) / 3
-        param3 = F.relu(param3) + F.relu(param3)
-        param4 = (F.relu(param4) + F.relu(param4)) / 3
+        param1 = F.relu(param1) + F.relu(-param1)
+        param2 = (F.relu(param2) + F.relu(-param2)) / 3
+        param3 = F.relu(-param3) + F.relu(-param3)
+        param4 = (F.relu(-param4) + F.relu(-param4)) / 3
         param12 = torch.cat([param2,
                              param2 + param1,
                              param2], dim=2)
