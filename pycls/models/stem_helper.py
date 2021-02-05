@@ -42,6 +42,28 @@ class ResStemCifar(Module):
         return cx
 
 
+class ResStemCifarStochastic(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarStochastic, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.stochastic = Stochastic(prob=0.5)
+
+    def forward(self, x):
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
 class ResStemCifarSub(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
 
