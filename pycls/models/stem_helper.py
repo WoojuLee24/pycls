@@ -51,7 +51,6 @@ class ResStemCifarStochastic(Module):
         self.bn = norm2d(w_out)
         self.af = activation()
         self.stochastic = Stochastic(prob=0.5)
-        self.bn2 = norm2d(w_out)
         self.af = activation()
 
     def forward(self, x):
@@ -59,7 +58,6 @@ class ResStemCifarStochastic(Module):
         x = self.bn(x)
         x = self.af(x)
         x = self.stochastic(x)
-        x = self.bn2(x)
         x = self.af(x)
         return x
 
