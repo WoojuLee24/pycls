@@ -19,8 +19,16 @@ class Stochastic(nn.Module):
         x = x - y
         return x
 
+    def subtract_deterministic_feauture(self, x):
+        y = torch.roll(x, 1, 1)
+        x = x - y
+        return x
+
     def forward(self, x):
-        x = self.subtract_feature(x, prob=self.prob)
+        if self.training:
+            x = self.subtract_feature(x, prob=self.prob)
+        else:
+            x = self.subtract_deterministic_feauture(x)
         return x
 
 
