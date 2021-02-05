@@ -488,7 +488,7 @@ class ParamBlurPool3x3(nn.Conv2d):
 
 
     def forward(self, x):
-        weight = self.get_weight4(self.param1, self.param2)
+        weight = self.get_weight5(self.param1, self.param2)
         x = self.reflection_pad(x)
         if self.groups == self.in_channels:
             weight = self.get_norm(weight)
