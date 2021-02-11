@@ -4,7 +4,7 @@ MODEL:
 ANYNET:
   STEM_TYPE: res_stem_max_param_blur_pool_in
   STEM_W: 64
-  BLOCK_TYPE: res_max_blur_pool_bottleneck_block
+  BLOCK_TYPE: res_max_param_blur_pool_bottleneck_block
   STRIDES: [1, 2, 2, 2]
   DEPTHS: [3, 4, 6, 3]
   WIDTHS: [256, 512, 1024, 2048]

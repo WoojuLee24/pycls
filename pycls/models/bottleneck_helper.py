@@ -1837,7 +1837,7 @@ class MaxParamBlurPoolBottleneckTransform(Module):
             self.b_bn = norm2d(w_b)
             self.b_af = activation()
             # self.max_blur = BlurPool(w_b, filt_size=3, stride=stride)
-            self.max_blur = BlurPool2(w_b, w_b, kernel_size=3, stride=stride, groups=w_b)
+            self.max_blur = ParamBlurPool3x3(w_b, w_b, kernel_size=3, stride=stride, groups=w_b)
         else:
             self.b = conv2d(w_b, w_b, 3, stride=stride, groups=groups)
             self.b_bn = norm2d(w_b)
