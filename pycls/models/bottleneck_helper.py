@@ -1845,8 +1845,8 @@ class MaxParamBlurPoolBottleneckTransform(Module):
 
         self.se = SE(w_b, w_se) if w_se else None
         self.c = conv2d(w_b, w_out, 1)
-        self.c_bn = norm2d(w_out)git status
-        
+        self.c_bn = norm2d(w_out)
+
         self.c_bn.final_bn = True
 
     def forward(self, x):
