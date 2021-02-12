@@ -389,8 +389,8 @@ class ParamBlurPool3x3(nn.Conv2d):
         self.groups = groups
         self.padding = padding
         self.reflection_pad = nn.ReflectionPad2d(1)
-        self.param1 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0)
-        self.param2 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0, mul=3)
+        self.param1 = self.get_param(self.in_channels, self.out_channels, 1, self.groups, 0)
+        self.param2 = self.get_param(self.in_channels, self.out_channels, 1, self.groups, 0, mul=3)
         # self.param3 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.20)
         # self.param4 = self.get_param(self.in_channels, self.out_channels, self.kernel_size, self.groups, 0.25, mul=3)
 
