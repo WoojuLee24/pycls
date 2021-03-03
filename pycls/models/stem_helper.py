@@ -15,11 +15,13 @@ from pycls.models.blocks import (
     pool2d_cx,
 )
 import torch
+import pycls.torch_dct as dct
 from torch.nn import Module
 from pycls.models.endstop_helper import *
 from pycls.models.blurpool import *
 from pycls.models.kernel_helper import *
 from pycls.models.stochastic_helper import *
+
 
 class ResStemCifar(Module):
     """ResNet stem for CIFAR: 3x3, BN, AF."""
@@ -33,6 +35,68 @@ class ResStemCifar(Module):
     def forward(self, x):
         for layer in self.children():
             x = layer(x)
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResStemCifarDCT(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarDCT, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.dct_ratio_high = cfg.FREQ.HIGH
+        self.dct_ratio_low = cfg.FREQ.LOW
+
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = dct.dct_2d(x)
+        B, C, H, W = x.size()
+        x[:, :, :int(self.dct_ratio_low * H), :int(self.dct_ratio_low * W)] = 0
+        x[:, :, int(self.dct_ratio_high * H):, int(self.dct_ratio_high * W):] = 0
+        x = dct.idct_2d(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
+
+class ResStemCifarDCTInput(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarDCTInput, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.dct_ratio_high = cfg.FREQ.HIGH
+        self.dct_ratio_low = cfg.FREQ.LOW
+
+
+    def forward(self, x):
+        x = dct.dct_2d(x)
+        B, C, H, W = x.size()
+        x[:, :, :int(self.dct_ratio_low * H), :int(self.dct_ratio_low * W)] = 0
+        x[:, :, int(self.dct_ratio_high * H):, int(self.dct_ratio_high * W):] = 0
+        x = dct.idct_2d(x)
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+
         return x
 
     @staticmethod

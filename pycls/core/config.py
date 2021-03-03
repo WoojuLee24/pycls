@@ -251,6 +251,11 @@ _C.BLUR.SIGMA = 0.8
 _C.BLUR.KERNEL_SIZE = 3
 _C.BLUR.KERNEL_NORM = True
 
+# -------------------------------- Freq options --------------------------------  #
+_C.FREQ = CfgNode()
+_C.FREQ.HIGH = 1.0
+_C.FREQ.LOW = 0.0
+
 # --------------------------------- Training options --------------------------------- #
 _C.TRAIN = CfgNode()
 
