@@ -75,6 +75,7 @@ def get_stem_fun(stem_type):
         # "res_stem_endstop_dilation_fc_entire": ResStemEndstopDilationFcEntire,
         "res_stem_fix_sm_entire": ResStemFixSMEntire,
         "res_stem_fix_sm_entire_af": ResStemFixSMEntireAf,
+        "res_stem_fix_dct_entire": ResStemFixDCTEntire,
         "res_stem_endstop_divide_separation": ResStemEndstopDivideSeparation,
         "res_stem_endstop_divide_3x3_separation_entire": ResStemEndstopDivide3x3SeparationEntire,
         "res_stem_endstop_divide_5x5_separation_entire": ResStemEndstopDivide5x5SeparationEntire,

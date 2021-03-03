@@ -255,10 +255,10 @@ def train_model():
             test_epoch(test_loader, model, test_meter, cur_epoch)
         # Evaluate the shift equivariance of the model
         # if (0) <= (cur_epoch + 1) <= cfg.OPTIM.MAX_EPOCH:
-        if (cfg.OPTIM.MAX_EPOCH - 20) <= (cur_epoch + 1) <= cfg.OPTIM.MAX_EPOCH:
-            consist = test_epoch_shift(test_loader, model, epochs_shift=5, print_freq=100)
-            test_meter.get_consistency_stats(cur_epoch, consist)
-            test_meter.reset()
+        # if (cfg.OPTIM.MAX_EPOCH - 20) <= (cur_epoch + 1) <= cfg.OPTIM.MAX_EPOCH:
+        #     consist = test_epoch_shift(test_loader, model, epochs_shift=5, print_freq=100)
+        #     test_meter.get_consistency_stats(cur_epoch, consist)
+        #     test_meter.reset()
         # Save a checkpoint
         if (cur_epoch + 1) % cfg.TRAIN.CHECKPOINT_PERIOD == 0 or last_epoch:
             file = cp.save_checkpoint(model, optimizer, cur_epoch)

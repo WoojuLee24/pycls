@@ -1174,6 +1174,69 @@ class ResStem(Module):
         return cx
 
 
+class ResStemFixSMEntire(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemFixSMEntire, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.e = CompareFixedSM(w_out, w_out, 5, stride=1, groups=w_out)
+        self.pool = pool2d(w_out, 3, stride=2)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.e(x)
+        x = self.pool(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
+class ResStemFixDCTEntire(Module):
+    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemFixDCTEntire, self).__init__()
+        self.conv = conv2d(w_in, w_out, 7, stride=2)
+        self.bn = norm2d(w_out)
+        self.af = activation()
+        self.e = CompareFixedSM(w_out, w_out, 5, stride=1, groups=w_out)
+        self.dct_ratio_high = cfg.FREQ.HIGH
+        self.dct_ratio_low = cfg.FREQ.LOW
+        self.pool = pool2d(w_out, 3, stride=2)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.af(x)
+        x = self.e(x)
+        x = dct.dct_2d(x)
+        B, C, H, W = x.size()
+        x[:, :, :int(self.dct_ratio_low * H), :int(self.dct_ratio_low * W)] = 0
+        x[:, :, int(self.dct_ratio_high * H):, int(self.dct_ratio_high * W):] = 0
+        x = dct.idct_2d(x)
+        x = self.pool(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
+        cx = norm2d_cx(cx, w_out)
+        cx = pool2d_cx(cx, w_out, 3, stride=2)
+        return cx
+
+
 class ResStemMaxBlurPool(Module):
     """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
 
@@ -1584,34 +1647,6 @@ class ResStemFixSMEntireAf(Module):
         x = self.af(x)
         x = self.e(x)
         x = self.af(x)
-        x = self.pool(x)
-
-        return x
-
-    @staticmethod
-    def complexity(cx, w_in, w_out):
-        cx = conv2d_cx(cx, w_in, w_out, 7, stride=2)
-        cx = norm2d_cx(cx, w_out)
-        cx = pool2d_cx(cx, w_out, 3, stride=2)
-        return cx
-
-
-class ResStemFixSMEntire(Module):
-    """ResNet stem for ImageNet: 7x7, BN, AF, MaxPool."""
-
-    def __init__(self, w_in, w_out):
-        super(ResStemFixSMEntire, self).__init__()
-        self.conv = conv2d(w_in, w_out, 7, stride=2)
-        self.bn = norm2d(w_out)
-        self.af = activation()
-        self.e = CompareFixedSM(w_out, w_out, 5, stride=1, groups=w_out)
-        self.pool = pool2d(w_out, 3, stride=2)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.af(x)
-        x = self.e(x)
         x = self.pool(x)
 
         return x
