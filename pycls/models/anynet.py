@@ -19,6 +19,7 @@ def get_stem_fun(stem_type):
         "res_stem_cifar": ResStemCifar,
         "res_stem_cifar_dct": ResStemCifarDCT,
         "res_stem_cifar_sm_norm": ResStemCifarSMNorm,
+        "res_stem_cifar_sm_norm2": ResStemCifarSMNorm2,
         "res_stem_cifar_dct_input": ResStemCifarDCTInput,
         "res_stem_cifar_stochastic": ResStemCifarStochastic,
         "res_stem_cifar_no_bn": ResStemCifarNoBn,
