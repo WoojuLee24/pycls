@@ -16,6 +16,7 @@ from pycls.models.endstop_helper import *
 from pycls.models.kernel_helper import *
 from pycls.models.blurpool import *
 from pycls.models.stochastic_helper import *
+from pycls.models.sm_helper import *
 
 # ----------------------- Shortcuts for common torch.nn layers ----------------------- #
 
@@ -196,7 +197,8 @@ def init_weights(m):
             or isinstance(m, BMVCBlurPool3x3) \
             or isinstance(m, SortBlurPool) \
             or isinstance(m, Stochastic) \
-            or isinstance(m, EndstoppingSlopeTanh2):
+            or isinstance(m, EndstoppingSlopeTanh2) \
+            or isinstance(m, SMNorm):
         pass
     elif isinstance(m, nn.Conv2d):
         # Note that there is no bias due to BN

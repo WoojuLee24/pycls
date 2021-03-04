@@ -14,9 +14,11 @@ from pycls.models.blocks import (
     pool2d,
     pool2d_cx,
 )
+
 import torch
 import pycls.torch_dct as dct
 from torch.nn import Module
+from pycls.models.sm_helper import *
 from pycls.models.endstop_helper import *
 from pycls.models.blurpool import *
 from pycls.models.kernel_helper import *
@@ -73,6 +75,32 @@ class ResStemCifarDCT(Module):
         cx = conv2d_cx(cx, w_in, w_out, 3)
         cx = norm2d_cx(cx, w_out)
         return cx
+
+
+class ResStemCifarSMNorm(Module):
+    """ResNet stem for CIFAR: 3x3, BN, AF."""
+
+    def __init__(self, w_in, w_out):
+        super(ResStemCifarSMNorm, self).__init__()
+        self.conv = conv2d(w_in, w_out, 3)
+        #self.bn = norm2d(w_out)
+        self.bn = SMNorm(w_out, w_out, groups=w_out)
+        self.af = activation()
+
+    def forward(self, x):
+        x = self.conv(x)
+
+        x = self.bn(x)
+        x = self.af(x)
+
+        return x
+
+    @staticmethod
+    def complexity(cx, w_in, w_out):
+        cx = conv2d_cx(cx, w_in, w_out, 3)
+        cx = norm2d_cx(cx, w_out)
+        return cx
+
 
 
 class ResStemCifarDCTInput(Module):
